@@ -65,9 +65,15 @@ libsimd_la_SOURCES = jsimd_arm64.c jsimd_arm64_neon.S
 
 endif
 
-if SIMD_MIPS
+if SIMD_DSPR2
 
-libsimd_la_SOURCES = jsimd_mips.c jsimd_mips_dspr2_asm.h jsimd_mips_dspr2.S
+libsimd_la_SOURCES = jsimd_mips_dspr2.c jsimd_mips_dspr2_asm.h jsimd_mips_dspr2.S
+
+endif
+
+if SIMD_MSA
+
+libsimd_la_SOURCES = jsimd_msa.c jidct_msa.c
 
 endif
 

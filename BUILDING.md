@@ -405,7 +405,8 @@ Once built, lipo can be used to combine the ARMv6, v7, v7s, and/or v8 variants
 into a universal library.
 
 
-### Building libjpeg-turbo for Android
+Building libjpeg-turbo for Android
+==================================
 
 Building libjpeg-turbo for Android platforms requires the Android NDK
 (https://developer.android.com/tools/sdk/ndk) and autotools.  The following is
@@ -431,6 +432,24 @@ a general recipe script that can be modified for your specific needs.
     SYSROOT=${NDK_PATH}/platforms/android-${ANDROID_VERSION}/arch-arm64
     ANDROID_CFLAGS="--sysroot=${SYSROOT}"
 
+    # 32-bit MIPS build for mips32r2 (74kf)
+    HOST=mipsel-linux-android
+    SYSROOT=${NDK_PATH}/platforms/android-${ANDROID_VERSION}/arch-mips
+    ANDROID_CFLAGS="-EL -mips32r2 -mabi=32 -mdspr2 -mtune=74kf -mhard-float \
+      --sysroot=${SYSROOT}"
+
+    # 32-bit MIPS build for mips32r5 (p5600)
+    HOST=mipsel-linux-android
+    SYSROOT=${NDK_PATH}/platforms/android-${ANDROID_VERSION}/arch-mips
+    ANDROID_CFLAGS="-EL -mips32r5 -mabi=32 -mmsa -mfp64 -msched-weight \
+      -mload-store-pairs -mtune=p5600 --sysroot=${SYSROOT}"
+
+    # 64-bit MIPS build for mips64r6 (i6400)
+    HOST=mips64el-linux-android
+    SYSROOT=${NDK_PATH}/platforms/android-${ANDROID_VERSION}/arch-mips64
+    ANDROID_CFLAGS="-EL -mips64r6 -mabi=64 -mmsa -mfp64 -msched-weight \
+      -mload-store-pairs -mtune=i6400 --sysroot=${SYSROOT}"
+
     TOOLCHAIN=${NDK_PATH}/toolchains/${HOST}-${TOOLCHAIN_VERSION}/prebuilt/${BUILD_PLATFORM}
     ANDROID_INCLUDES="-I${SYSROOT}/usr/include -I${TOOLCHAIN}/include"
     export CPP=${TOOLCHAIN}/bin/${HOST}-cpp
@@ -452,6 +471,43 @@ a general recipe script that can be modified for your specific needs.
 If building for Android 4.0.x (API level < 16) or earlier, remove `-fPIE` from
 `CFLAGS` and `-pie` from `LDFLAGS`.
 
+Building libjpeg-turbo for MIPS Linux
+=====================================
+
+MIPS Linux toolchain is available at:
+    https://community.imgtec.com/developers/mips/tools/codescape-mips-sdk/download-codescape-mips-sdk-essentials/early-access-release-of-components/
+
+    # Set following variables as per target selection
+    TOOLCHAIN={full toolchain path including "bin" dir -- for example, /opt/linux_toolchain/bin}
+
+    # 32-bit build for mips32r2 (74kf)
+    HOST=mipsel-linux-gnu
+    GCC_PREFIX=mips-mti-linux-gnu
+    MIPS_CFLAGS="-EL -mips32r2 -mabi=32 -mdspr2 -mtune=74kf -mhard-float"
+
+    # 32-bit build for mips32r5 (p5600)
+    HOST=mipsel-linux-gnu
+    GCC_PREFIX=mips-mti-linux-gnu
+    MIPS_CFLAGS="-EL -mips32r5 -mabi=32 -mmsa -mfp64 -msched-weight \
+      -mload-store-pairs -mtune=p5600"
+
+    # 64-bit build for mips64r6 (i6400)
+    HOST=mips64el-linux-gnu
+    GCC_PREFIX=mips-img-linux-gnu
+    MIPS_CFLAGS="-EL -mips64r6 -mabi=64 -mmsa -mfp64 -msched-weight \
+      -mload-store-pairs -mtune=i6400"
+
+    export CC_PATH=${TOOLCHAIN}/${GCC_PREFIX}-gcc
+    export CXX_PATH=${TOOLCHAIN}/${GCC_PREFIX}-g++
+    export AR_PATH=${TOOLCHAIN}/${GCC_PREFIX}-ar
+    export LD_PATH=${TOOLCHAIN}/${GCC_PREFIX}-ld
+
+    cd {build_directory}
+    sh {source_directory}/configure --host=${HOST} \
+      CC="${CC_PATH} -EL" CXX="${CXX_PATH} -EL" AR="${AR_PATH}" LD="${LD_PATH}" \
+      CFLAGS="${MIPS_CFLAGS} -O3" CPPFLAGS="${MIPS_CFLAGS}" \
+      LDFLAGS="${MIPS_CFLAGS}" --with-simd ${1+"$@"}
+    make
 
 Building on Windows (Visual C++ or MinGW)
 =========================================
