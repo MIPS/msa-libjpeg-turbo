@@ -184,13 +184,13 @@ AC_DEFUN([AC_CHECK_COMPATIBLE_ARM_ASSEMBLER_IFELSE],[
   fi
 ])
 
-# AC_CHECK_COMPATIBLE_MIPSEL_ASSEMBLER_IFELSE
+# AC_CHECK_COMPATIBLE_DSPR2_ASSEMBLER_IFELSE
 # --------------------------
 # Test whether the assembler is suitable and supports MIPS instructions
-AC_DEFUN([AC_CHECK_COMPATIBLE_MIPS_ASSEMBLER_IFELSE],[
+AC_DEFUN([AC_CHECK_COMPATIBLE_DSPR2_ASSEMBLER_IFELSE],[
   have_mips_dspr2=no
   ac_save_CFLAGS="$CFLAGS"
-  CFLAGS="$CCASFLAGS -mdspr2"
+  CFLAGS="$CCASFLAGS"
 
   AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
 
@@ -208,6 +208,33 @@ AC_DEFUN([AC_CHECK_COMPATIBLE_MIPS_ASSEMBLER_IFELSE],[
   CFLAGS=$ac_save_CFLAGS
 
   if test "x$have_mips_dspr2" = "xyes" ; then
+    $1
+  else
+    $2
+  fi
+])
+
+# AC_CHECK_COMPATIBLE_MSA_ASSEMBLER_IFELSE
+# --------------------------
+# Test whether the assembler is suitable and supports MIPS instructions
+AC_DEFUN([AC_CHECK_COMPATIBLE_MSA_ASSEMBLER_IFELSE],[
+  have_msa=no
+  ac_save_CFLAGS="$CFLAGS"
+  CFLAGS="$CCASFLAGS"
+
+  AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+
+    #include <msa.h>
+    int __attribute__((optimize("O0"))) main ()
+    {
+      v8i16 a0 = {0}, a1 = {0};
+      a0 = a0 + a1;
+      return 0;
+    }
+  ]])], have_msa=yes)
+  CFLAGS=$ac_save_CFLAGS
+
+  if test "x$have_msa" = "xyes" ; then
     $1
   else
     $2
