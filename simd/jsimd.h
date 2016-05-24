@@ -795,6 +795,13 @@ EXTERN(void) jsimd_idct_12x12_pass1_mips_dspr2
 EXTERN(void) jsimd_idct_12x12_pass2_mips_dspr2
         (int *workspace, int *output);
 
+EXTERN(void) jsimd_idct_2x2_msa
+        (j_decompress_ptr cinfo, jpeg_component_info * compptr,
+         JCOEFPTR coef_block, JSAMPARRAY output_buf, JDIMENSION output_col);
+EXTERN(void) jsimd_idct_4x4_msa
+        (j_decompress_ptr cinfo, jpeg_component_info * compptr,
+         JCOEFPTR coef_block, JSAMPARRAY output_buf, JDIMENSION output_col);
+
 /* Slow Integer Inverse DCT */
 EXTERN(void) jsimd_idct_islow_mmx
         (void *dct_table, JCOEFPTR coef_block, JSAMPARRAY output_buf,
@@ -841,6 +848,10 @@ EXTERN(void) jsimd_idct_ifast_cols_mips_dspr2
 EXTERN(void) jsimd_idct_ifast_rows_mips_dspr2
         (DCTELEM *wsptr, JSAMPARRAY output_buf, JDIMENSION output_col,
          const int *idct_coefs);
+
+EXTERN(void) jsimd_idct_ifast_msa
+        (j_decompress_ptr cinfo, jpeg_component_info * compptr,
+         JCOEFPTR coef_block, JSAMPARRAY output_buf, JDIMENSION output_col);
 
 EXTERN(void) jsimd_idct_ifast_altivec
         (void *dct_table, JCOEFPTR coef_block, JSAMPARRAY output_buf,

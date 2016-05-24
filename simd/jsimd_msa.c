@@ -556,6 +556,9 @@ jsimd_can_idct_2x2 (void)
   if (sizeof(ISLOW_MULT_TYPE) != 2)
     return 0;
 
+  if (simd_support & JSIMD_MSA)
+    return 1;
+
   return 0;
 }
 
@@ -575,6 +578,9 @@ jsimd_can_idct_4x4 (void)
     return 0;
   if (sizeof(ISLOW_MULT_TYPE) != 2)
     return 0;
+
+  if (simd_support & JSIMD_MSA)
+    return 1;
 
   return 0;
 }
@@ -623,6 +629,14 @@ jsimd_idct_2x2 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
                 JCOEFPTR coef_block, JSAMPARRAY output_buf,
                 JDIMENSION output_col)
 {
+  if (simd_support & JSIMD_MSA) {
+    unsigned char *output[2] = {
+      output_buf[0] + output_col,
+      output_buf[1] + output_col,
+    };
+
+    jsimd_idct_2x2_msa(cinfo, compptr, coef_block, output, output_col);
+  }
 }
 
 GLOBAL(void)
@@ -630,6 +644,16 @@ jsimd_idct_4x4 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
                 JCOEFPTR coef_block, JSAMPARRAY output_buf,
                 JDIMENSION output_col)
 {
+  if (simd_support & JSIMD_MSA) {
+    unsigned char *output[4] = {
+      output_buf[0] + output_col,
+      output_buf[1] + output_col,
+      output_buf[2] + output_col,
+      output_buf[3] + output_col,
+    };
+
+    jsimd_idct_4x4_msa(cinfo, compptr, coef_block, output, output_col);
+  }
 }
 
 GLOBAL(void)
@@ -688,6 +712,9 @@ jsimd_can_idct_ifast (void)
   if (IFAST_SCALE_BITS != 2)
     return 0;
 
+  if (simd_support & JSIMD_MSA)
+    return 1;
+
   return 0;
 }
 
@@ -725,6 +752,20 @@ jsimd_idct_ifast (j_decompress_ptr cinfo, jpeg_component_info *compptr,
                   JCOEFPTR coef_block, JSAMPARRAY output_buf,
                   JDIMENSION output_col)
 {
+  if (simd_support & JSIMD_MSA) {
+    unsigned char *output[8] = {
+      output_buf[0] + output_col,
+      output_buf[1] + output_col,
+      output_buf[2] + output_col,
+      output_buf[3] + output_col,
+      output_buf[4] + output_col,
+      output_buf[5] + output_col,
+      output_buf[6] + output_col,
+      output_buf[7] + output_col,
+    };
+
+    jsimd_idct_ifast_msa(cinfo, compptr, coef_block, output, output_col);
+  }
 }
 
 GLOBAL(void)
