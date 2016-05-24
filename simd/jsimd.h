@@ -23,6 +23,7 @@
 #define JSIMD_ARM_NEON   0x10
 #define JSIMD_MIPS_DSPR2 0x20
 #define JSIMD_ALTIVEC    0x40
+#define JSIMD_MSA        0x80
 
 /* SIMD Ext: retrieve SIMD/CPU information */
 EXTERN(unsigned int) jpeg_simd_cpu_support (void);
@@ -811,6 +812,10 @@ EXTERN(void) jsimd_idct_islow_neon
 EXTERN(void) jsimd_idct_islow_mips_dspr2
         (void *dct_table, JCOEFPTR coef_block, int *output_buf,
          JSAMPLE *output_col);
+
+EXTERN(void) jsimd_idct_islow_msa
+        (j_decompress_ptr cinfo, jpeg_component_info * compptr,
+         JCOEFPTR coef_block, JSAMPARRAY output_buf, JDIMENSION output_col);
 
 EXTERN(void) jsimd_idct_islow_altivec
         (void *dct_table, JCOEFPTR coef_block, JSAMPARRAY output_buf,
