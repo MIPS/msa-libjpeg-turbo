@@ -75,32 +75,6 @@ init_simd (void)
 #endif
 }
 
-static const int mips_idct_ifast_coefs[4] = {
-  0x45404540,           // FIX( 1.082392200 / 2) =  17734 = 0x4546
-  0x5A805A80,           // FIX( 1.414213562 / 2) =  23170 = 0x5A82
-  0x76407640,           // FIX( 1.847759065 / 2) =  30274 = 0x7642
-  0xAC60AC60            // FIX(-2.613125930 / 4) = -21407 = 0xAC61
-};
-
-/* The following struct is borrowed from jdsample.c */
-typedef void (*upsample1_ptr) (j_decompress_ptr cinfo,
-                               jpeg_component_info *compptr,
-                               JSAMPARRAY input_data,
-                               JSAMPARRAY *output_data_ptr);
-
-typedef struct {
-  struct jpeg_upsampler pub;
-  JSAMPARRAY color_buf[MAX_COMPONENTS];
-  upsample1_ptr methods[MAX_COMPONENTS];
-  int next_row_out;
-  JDIMENSION rows_to_go;
-  int rowgroup_height[MAX_COMPONENTS];
-  UINT8 h_expand[MAX_COMPONENTS];
-  UINT8 v_expand[MAX_COMPONENTS];
-} my_upsampler;
-
-typedef my_upsampler *my_upsample_ptr;
-
 GLOBAL(int)
 jsimd_can_rgb_ycc (void)
 {

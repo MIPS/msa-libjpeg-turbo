@@ -433,20 +433,20 @@ and autotools.  The following is a general recipe script that can be modified fo
     # 32-bit MIPS build for mips32r2 (74kf)
     HOST=mipsel-linux-android
     SYSROOT=${NDK_PATH}/platforms/android-${ANDROID_VERSION}/arch-mips
-    ANDROID_CFLAGS="-EL -funroll-loops -mips32r2 -mabi=32 -mdspr2 -mtune=74kf \
-      -mhard-float --sysroot=${SYSROOT}"
+    ANDROID_CFLAGS="-EL -mips32r2 -mabi=32 -mdspr2 -mtune=74kf -mhard-float \
+      --sysroot=${SYSROOT}"
 
     # 32-bit MIPS build for mips32r5 (p5600)
     HOST=mipsel-linux-android
     SYSROOT=${NDK_PATH}/platforms/android-${ANDROID_VERSION}/arch-mips
-    ANDROID_CFLAGS="-EL -funroll-loops -mips32r5 -mabi=32 -mmsa -mfp64 \
-      -msched-weight -mload-store-pairs -mtune=p5600 --sysroot=${SYSROOT}"
+    ANDROID_CFLAGS="-EL -mips32r5 -mabi=32 -mmsa -mfp64 -msched-weight \
+      -mload-store-pairs -mtune=p5600 --sysroot=${SYSROOT}"
 
     # 64-bit MIPS build for mips64r6 (i6400)
     HOST=mips64el-linux-android
     SYSROOT=${NDK_PATH}/platforms/android-${ANDROID_VERSION}/arch-mips64
-    ANDROID_CFLAGS="-EL -funroll-loops -mips64r6 -mabi=64 -mmsa -mfp64 \
-      -msched-weight -mload-store-pairs -mtune=i6400 --sysroot=${SYSROOT}"
+    ANDROID_CFLAGS="-EL -mips64r6 -mabi=64 -mmsa -mfp64 -msched-weight \
+      -mload-store-pairs -mtune=i6400 --sysroot=${SYSROOT}"
 
     TOOLCHAIN=${NDK_PATH}/toolchains/${HOST}-${TOOLCHAIN_VERSION}/prebuilt/${BUILD_PLATFORM}
     ANDROID_INCLUDES="-I${SYSROOT}/usr/include -I${TOOLCHAIN}/include"
@@ -481,19 +481,19 @@ MIPS Linux toolchain is available at:
     # 32-bit build for mips32r2 (74kf)
     HOST=mipsel-linux-gnu
     GCC_PREFIX=mips-mti-linux-gnu
-    MIPS_CFLAGS="-EL -funroll-loops -mips32r2 -mabi=32 -mdspr2 -mtune=74kf -mhard-float"
+    MIPS_CFLAGS="-EL -mips32r2 -mabi=32 -mdspr2 -mtune=74kf -mhard-float"
 
     # 32-bit build for mips32r5 (p5600)
     HOST=mipsel-linux-gnu
     GCC_PREFIX=mips-mti-linux-gnu
-    MIPS_CFLAGS="-EL -funroll-loops -mips32r5 -mabi=32 -mmsa -mfp64 \
-      -msched-weight -mload-store-pairs -mtune=p5600"
+    MIPS_CFLAGS="-EL -mips32r5 -mabi=32 -mmsa -mfp64 -msched-weight \
+      -mload-store-pairs -mtune=p5600"
 
     # 64-bit build for mips64r6 (i6400)
     HOST=mips64el-linux-gnu
     GCC_PREFIX=mips-img-linux-gnu
-    MIPS_CFLAGS="-EL -funroll-loops -mips64r6 -mabi=64 -mmsa -mfp64 \
-      -msched-weight -mload-store-pairs -mtune=i6400"
+    MIPS_CFLAGS="-EL -mips64r6 -mabi=64 -mmsa -mfp64 -msched-weight \
+      -mload-store-pairs -mtune=i6400"
 
     export CC_PATH=${TOOLCHAIN}/${GCC_PREFIX}-gcc
     export CXX_PATH=${TOOLCHAIN}/${GCC_PREFIX}-g++
