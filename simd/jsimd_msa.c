@@ -451,6 +451,9 @@ jsimd_can_fdct_islow (void)
   if (sizeof(DCTELEM) != 2)
     return 0;
 
+  if (simd_support & JSIMD_MSA)
+    return 1;
+
   return 0;
 }
 
@@ -464,6 +467,9 @@ jsimd_can_fdct_ifast (void)
     return 0;
   if (sizeof(DCTELEM) != 2)
     return 0;
+
+  if (simd_support & JSIMD_MSA)
+    return 1;
 
   return 0;
 }
@@ -479,11 +485,13 @@ jsimd_can_fdct_float (void)
 GLOBAL(void)
 jsimd_fdct_islow (DCTELEM *data)
 {
+    jsimd_fdct_islow_msa(data);
 }
 
 GLOBAL(void)
 jsimd_fdct_ifast (DCTELEM *data)
 {
+    jsimd_fdct_ifast_msa(data);
 }
 
 GLOBAL(void)
