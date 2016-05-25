@@ -30,12 +30,14 @@
 #ifdef CLANG_BUILD
   #define MSA_ADDVI_H(a, b)  __msa_addvi_h((v8i16) a, b)
   #define MSA_ADDVI_W(a, b)  __msa_addvi_w((v4i32) a, b)
+  #define MSA_SLLI_H(a, b)   __msa_slli_h((v8i16) a, b)
   #define MSA_SLLI_W(a, b)   __msa_slli_w((v4i32) a, b)
   #define MSA_SRAI_H(a, b)   __msa_srai_h((v8i16) a, b)
   #define MSA_SRAI_W(a, b)   __msa_srai_w((v4i32) a, b)
 #else
   #define MSA_ADDVI_H(a, b)  (a + b)
   #define MSA_ADDVI_W(a, b)  (a + b)
+  #define MSA_SLLI_H(a, b)   (a << b)
   #define MSA_SLLI_W(a, b)   (a << b)
   #define MSA_SRAI_H(a, b)   (a >> b)
   #define MSA_SRAI_W(a, b)   (a >> b)
@@ -44,6 +46,7 @@
 #define LD_H(RTYPE, psrc) *((RTYPE *)(psrc))
 #define LD_SH(...) LD_H(v8i16, __VA_ARGS__)
 
+#define ST_H(RTYPE, in, pdst) *((RTYPE *)(pdst)) = (in)
 #if (__mips_isa_rev >= 6)
   #define SW(val, pdst) {                                 \
     unsigned char *pdst_sw_m = (unsigned char *) (pdst);  \
@@ -126,6 +129,24 @@
   LD_H4(RTYPE, (psrc) + 4 * stride, stride, out4, out5, out6, out7);  \
 }
 #define LD_SH8(...) LD_H8(v8i16, __VA_ARGS__)
+/* Description : Store vectors of 8 halfword elements with stride
+   Arguments   : Inputs - in0, in1, pdst, stride
+   Details     : Store 8 halfword elements from 'in0' to (pdst)
+                 Store 8 halfword elements from 'in1' to (pdst + stride)
+*/
+#define ST_H2(RTYPE, in0, in1, pdst, stride) {  \
+  ST_H(RTYPE, in0, (pdst));                     \
+  ST_H(RTYPE, in1, (pdst) + stride);            \
+}
+#define ST_H4(RTYPE, in0, in1, in2, in3, pdst, stride) {  \
+  ST_H2(RTYPE, in0, in1, (pdst), stride);                 \
+  ST_H2(RTYPE, in2, in3, (pdst) + 2 * stride, stride);    \
+}
+#define ST_H8(RTYPE, in0, in1, in2, in3, in4, in5, in6, in7, pdst, stride) {  \
+  ST_H4(RTYPE, in0, in1, in2, in3, (pdst), stride);                           \
+  ST_H4(RTYPE, in4, in5, in6, in7, (pdst) + 4 * stride, stride);              \
+}
+#define ST_SH8(...) ST_H8(v8i16, __VA_ARGS__)
 
 /* Description : Store 8x1 byte block to destination memory from input vector
    Arguments   : Inputs - in, pdst
@@ -332,6 +353,19 @@
   PCKEV_B2(RTYPE, in4, in5, in6, in7, out2, out3);               \
 }
 #define PCKEV_B4_UB(...) PCKEV_B4(v16u8, __VA_ARGS__)
+/* Description : Pack even halfword elements of vector pairs
+   Arguments   : Inputs  - in0, in1, in2, in3
+                 Outputs - out0, out1
+                 Return Type - as per RTYPE
+   Details     : Even halfword elements of 'in0' are copied to the left half of
+                 'out0' & even halfword elements of 'in1' are copied to the
+                 right half of 'out0'.
+*/
+#define PCKEV_H2(RTYPE, in0, in1, in2, in3, out0, out1) {  \
+  out0 = (RTYPE) __msa_pckev_h((v8i16) in0, (v8i16) in1);  \
+  out1 = (RTYPE) __msa_pckev_h((v8i16) in2, (v8i16) in3);  \
+}
+#define PCKEV_H2_SH(...) PCKEV_H2(v8i16, __VA_ARGS__)
 
 /* Description : Pack even double word elements of vector pairs
    Arguments   : Inputs  - in0, in1, in2, in3
@@ -366,6 +400,20 @@
 }
 #define SLLI_W4_SW(...) SLLI_W4(v4i32, __VA_ARGS__)
 
+/* Description : Arithmetic shift right all elements of word vector
+   Arguments   : Inputs  - in0, in1, in2, in3, shift
+                 Outputs - in place operation
+                 Return Type - as per input vector RTYPE
+   Details     : Each element of vector 'in0' is right shifted by 'shift' and
+                 the result is written in-place. 'shift' is a GP variable.
+*/
+#define SRAI_W4(RTYPE, in0, in1, in2, in3, shift_val) {  \
+  in0 = (RTYPE) MSA_SRAI_W(in0, shift_val);              \
+  in1 = (RTYPE) MSA_SRAI_W(in1, shift_val);              \
+  in2 = (RTYPE) MSA_SRAI_W(in2, shift_val);              \
+  in3 = (RTYPE) MSA_SRAI_W(in3, shift_val);              \
+}
+#define SRAI_W4_SW(...) SRAI_W4(v4i32, __VA_ARGS__)
 /* Description : Shift right arithmetic rounded (immediate)
    Arguments   : Inputs  - in0, in1, shift
                  Outputs - in place operation
@@ -446,6 +494,15 @@
                                           \
   tmp_m = __msa_clti_s_h((v8i16) in, 0);  \
   ILVRL_H2_SW(tmp_m, in, out0, out1);     \
+}
+#define UNPCK_SH2_SW(in0, in1, out0, out1, out2, out3) {  \
+  UNPCK_SH_SW(in0, out0, out1);                           \
+  UNPCK_SH_SW(in1, out2, out3);                           \
+}
+#define UNPCK_SH4_SW(in0, in1, in2, in3,                                \
+                     out0, out1, out2, out3, out4, out5, out6, out7) {  \
+  UNPCK_SH2_SW(in0, in1, out0, out1, out2, out3);                       \
+  UNPCK_SH2_SW(in2, in3, out4, out5, out6, out7);                       \
 }
 
 /* Description : Butterfly of 4 input vectors

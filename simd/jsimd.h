@@ -709,6 +709,8 @@ EXTERN(void) jsimd_fdct_islow_neon (DCTELEM *data);
 
 EXTERN(void) jsimd_fdct_islow_mips_dspr2 (DCTELEM *data);
 
+EXTERN(void) jsimd_fdct_islow_msa (DCTELEM *data);
+
 EXTERN(void) jsimd_fdct_islow_altivec (DCTELEM *data);
 
 /* Fast Integer Forward DCT */
@@ -720,6 +722,8 @@ EXTERN(void) jsimd_fdct_ifast_sse2 (DCTELEM *data);
 EXTERN(void) jsimd_fdct_ifast_neon (DCTELEM *data);
 
 EXTERN(void) jsimd_fdct_ifast_mips_dspr2 (DCTELEM *data);
+
+EXTERN(void) jsimd_fdct_ifast_msa (DCTELEM *data);
 
 EXTERN(void) jsimd_fdct_ifast_altivec (DCTELEM *data);
 
