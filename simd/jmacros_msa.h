@@ -43,9 +43,12 @@
   #define MSA_SRAI_W(a, b)   (a >> b)
 #endif
 
+#define LD_B(RTYPE, psrc) *((RTYPE *)(psrc))
+#define LD_SB(...) LD_B(v16i8, __VA_ARGS__)
 #define LD_H(RTYPE, psrc) *((RTYPE *)(psrc))
 #define LD_SH(...) LD_H(v8i16, __VA_ARGS__)
 
+#define ST_B(RTYPE, in, pdst) *((RTYPE *)(pdst)) = (in)
 #define ST_H(RTYPE, in, pdst) *((RTYPE *)(pdst)) = (in)
 #if (__mips_isa_rev >= 6)
   #define SW(val, pdst) {                                 \
@@ -129,6 +132,16 @@
   LD_H4(RTYPE, (psrc) + 4 * stride, stride, out4, out5, out6, out7);  \
 }
 #define LD_SH8(...) LD_H8(v8i16, __VA_ARGS__)
+/* Description : Store vectors of 16 byte elements with stride
+   Arguments   : Inputs - in0, in1, pdst, stride
+   Details     : Store 16 byte elements from 'in0' to (pdst)
+                 Store 16 byte elements from 'in1' to (pdst + stride)
+*/
+#define ST_B2(RTYPE, in0, in1, pdst, stride) {  \
+  ST_B(RTYPE, in0, (pdst));                     \
+  ST_B(RTYPE, in1, (pdst) + stride);            \
+}
+#define ST_SB2(...) ST_B2(v16i8, __VA_ARGS__)
 /* Description : Store vectors of 8 halfword elements with stride
    Arguments   : Inputs - in0, in1, pdst, stride
    Details     : Store 8 halfword elements from 'in0' to (pdst)
@@ -277,6 +290,7 @@
   out1 = (RTYPE) __msa_ilvl_b((v16i8) in0, (v16i8) in1);  \
 }
 #define ILVRL_B2_SB(...) ILVRL_B2(v16i8, __VA_ARGS__)
+#define ILVRL_B2_SH(...) ILVRL_B2(v8i16, __VA_ARGS__)
 
 #define ILVRL_H2(RTYPE, in0, in1, out0, out1) {           \
   out0 = (RTYPE) __msa_ilvr_h((v8i16) in0, (v8i16) in1);  \
@@ -399,6 +413,22 @@
   in3 = (RTYPE) MSA_SLLI_W(in3, shift_val);              \
 }
 #define SLLI_W4_SW(...) SLLI_W4(v4i32, __VA_ARGS__)
+/* Description : Arithmetic shift right all elements of half-word vector
+   Arguments   : Inputs  - in0, in1, in2, in3, shift
+                 Outputs - in place operation
+                 Return Type - as per input vector RTYPE
+   Details     : Each element of vector 'in0' is right shifted by 'shift' and
+                 the result is written in-place. 'shift' is a GP variable.
+*/
+#define SRAI_H2(RTYPE, in0, in1, shift) {          \
+  in0 = (RTYPE) __msa_srai_h((v8i16) in0, shift);  \
+  in1 = (RTYPE) __msa_srai_h((v8i16) in1, shift);  \
+}
+#define SRAI_H4(RTYPE, in0, in1, in2, in3, shift) {  \
+  SRAI_H2(RTYPE, in0, in1, shift);                   \
+  SRAI_H2(RTYPE, in2, in3, shift);                   \
+}
+#define SRAI_H4_SH(...) SRAI_H4(v8i16, __VA_ARGS__)
 
 /* Description : Arithmetic shift right all elements of word vector
    Arguments   : Inputs  - in0, in1, in2, in3, shift
