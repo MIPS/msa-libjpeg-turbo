@@ -55,7 +55,8 @@
 
 /* Local macros */
 #define FDCT_ISLOW_ODD_MULTIPLY(in0, in1, in2, in3, in4, in5, in6, in7, in8,  \
-                                in9, in10, in11, in12, in13, in14, in15)      \
+                                in9, in10, in11, in12, in13, in14, in15,      \
+                                const0, const1)                               \
   in0 = in0  * __msa_splati_w(const0, 0);                                     \
   in1 = in1  * __msa_splati_w(const0, 0);                                     \
   in2 = in2  * __msa_splati_w(const0, 1);                                     \
@@ -74,64 +75,64 @@
   in15 = in15 * __msa_splati_w(const1, 3);
 
 /* Do one pass of FDCT_IFAST */
-#define FDCT_IFAST_1PASS(val0, val1, val2, val3, val4, val5, val6, val7,    \
-                         dst0, dst1, dst2, dst3, dst4, dst5, dst6, dst7) {  \
-    v8i16 tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7;                   \
-    v8i16 tmp10, tmp11, tmp12, tmp13;                                       \
-    v8i16 z1, z2, z3, z4, z5, z11, z13;                                     \
-    v4i32 z1_r, z1_l, z2_r, z2_l, z3_r, z3_l, z4_r, z4_l, z5_r, z5_l;       \
-                                                                            \
-    BUTTERFLY_8(val0, val1, val2, val3, val4, val5, val6, val7,             \
-                tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7);            \
-                                                                            \
-    BUTTERFLY_4(tmp0, tmp1, tmp2, tmp3, tmp10, tmp11, tmp12, tmp13);        \
-                                                                            \
-    dst0 = tmp10 + tmp11;                                                   \
-    dst4 = tmp10 - tmp11;                                                   \
-                                                                            \
-    tmp12 = tmp12 + tmp13;                                                  \
-    UNPCK_SH_SW(tmp12, z1_r, z1_l);                                         \
-    z1_r = z1_r * __msa_splati_w(const0, 0);                                \
-    z1_l = z1_l * __msa_splati_w(const0, 0);                                \
-    z1_r = MSA_SRAI_W(z1_r, CONST_BITS_FAST);                               \
-    z1_l = MSA_SRAI_W(z1_l, CONST_BITS_FAST);                               \
-    z1 = __msa_pckev_h((v8i16) z1_l, (v8i16) z1_r);                         \
-                                                                            \
-    dst2 = tmp13 + z1;                                                      \
-    dst6 = tmp13 - z1;                                                      \
-                                                                            \
-    /* Odd part */                                                          \
-    tmp10 = tmp4 + tmp5;                                                    \
-    tmp11 = tmp5 + tmp6;                                                    \
-    tmp12 = tmp6 + tmp7;                                                    \
-    z5 = tmp10 - tmp12;                                                     \
-                                                                            \
-    UNPCK_SH4_SW(z5, tmp10, tmp12, tmp11, z5_r, z5_l, z2_r, z2_l,           \
-                 z4_r, z4_l, z3_r, z3_l);                                   \
-                                                                            \
-    z5_r = z5_r * __msa_splati_w(const0, 1);                                \
-    z5_l = z5_l * __msa_splati_w(const0, 1);                                \
-    z2_r = z2_r * __msa_splati_w(const0, 2);                                \
-    z2_l = z2_l * __msa_splati_w(const0, 2);                                \
-    z4_r = z4_r * __msa_splati_w(const0, 3);                                \
-    z4_l = z4_l * __msa_splati_w(const0, 3);                                \
-    z3_r = z3_r * __msa_splati_w(const0, 0);                                \
-    z3_l = z3_l * __msa_splati_w(const0, 0);                                \
-                                                                            \
-    /* Descale */                                                           \
-    SRAI_W4_SW(z5_l, z5_r, z2_l, z2_r, CONST_BITS_FAST);                    \
-    SRAI_W4_SW(z4_l, z4_r, z3_l, z3_r, CONST_BITS_FAST);                    \
-    PCKEV_H2_SH(z5_l, z5_r, z2_l, z2_r, z5, z2);                            \
-    PCKEV_H2_SH(z4_l, z4_r, z3_l, z3_r, z4, z3);                            \
-    ADD2(z2, z5, z4, z5, z2, z4);                                           \
-                                                                            \
-    z11 = tmp7 + z3;                                                        \
-    z13 = tmp7 - z3;                                                        \
-                                                                            \
-    dst5 = z13 + z2;                                                        \
-    dst3 = z13 - z2;                                                        \
-    dst1 = z11 + z4;                                                        \
-    dst7 = z11 - z4;                                                        \
+#define FDCT_IFAST_1PASS(val0, val1, val2, val3, val4, val5, val6, val7, dst0,  \
+                         dst1, dst2, dst3, dst4, dst5, dst6, dst7, const0) {    \
+    v8i16 tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7;                       \
+    v8i16 tmp10, tmp11, tmp12, tmp13;                                           \
+    v8i16 z1, z2, z3, z4, z5, z11, z13;                                         \
+    v4i32 z1_r, z1_l, z2_r, z2_l, z3_r, z3_l, z4_r, z4_l, z5_r, z5_l;           \
+                                                                                \
+    BUTTERFLY_8(val0, val1, val2, val3, val4, val5, val6, val7,                 \
+                tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7);                \
+                                                                                \
+    BUTTERFLY_4(tmp0, tmp1, tmp2, tmp3, tmp10, tmp11, tmp12, tmp13);            \
+                                                                                \
+    dst0 = tmp10 + tmp11;                                                       \
+    dst4 = tmp10 - tmp11;                                                       \
+                                                                                \
+    tmp12 = tmp12 + tmp13;                                                      \
+    UNPCK_SH_SW(tmp12, z1_r, z1_l);                                             \
+    z1_r = z1_r * __msa_splati_w(const0, 0);                                    \
+    z1_l = z1_l * __msa_splati_w(const0, 0);                                    \
+    z1_r = MSA_SRAI_W(z1_r, CONST_BITS_FAST);                                   \
+    z1_l = MSA_SRAI_W(z1_l, CONST_BITS_FAST);                                   \
+    z1 = __msa_pckev_h((v8i16) z1_l, (v8i16) z1_r);                             \
+                                                                                \
+    dst2 = tmp13 + z1;                                                          \
+    dst6 = tmp13 - z1;                                                          \
+                                                                                \
+    /* Odd part */                                                              \
+    tmp10 = tmp4 + tmp5;                                                        \
+    tmp11 = tmp5 + tmp6;                                                        \
+    tmp12 = tmp6 + tmp7;                                                        \
+    z5 = tmp10 - tmp12;                                                         \
+                                                                                \
+    UNPCK_SH4_SW(z5, tmp10, tmp12, tmp11, z5_r, z5_l, z2_r, z2_l,               \
+                 z4_r, z4_l, z3_r, z3_l);                                       \
+                                                                                \
+    z5_r = z5_r * __msa_splati_w(const0, 1);                                    \
+    z5_l = z5_l * __msa_splati_w(const0, 1);                                    \
+    z2_r = z2_r * __msa_splati_w(const0, 2);                                    \
+    z2_l = z2_l * __msa_splati_w(const0, 2);                                    \
+    z4_r = z4_r * __msa_splati_w(const0, 3);                                    \
+    z4_l = z4_l * __msa_splati_w(const0, 3);                                    \
+    z3_r = z3_r * __msa_splati_w(const0, 0);                                    \
+    z3_l = z3_l * __msa_splati_w(const0, 0);                                    \
+                                                                                \
+    /* Descale */                                                               \
+    SRAI_W4_SW(z5_l, z5_r, z2_l, z2_r, CONST_BITS_FAST);                        \
+    SRAI_W4_SW(z4_l, z4_r, z3_l, z3_r, CONST_BITS_FAST);                        \
+    PCKEV_H2_SH(z5_l, z5_r, z2_l, z2_r, z5, z2);                                \
+    PCKEV_H2_SH(z4_l, z4_r, z3_l, z3_r, z4, z3);                                \
+    ADD2(z2, z5, z4, z5, z2, z4);                                               \
+                                                                                \
+    z11 = tmp7 + z3;                                                            \
+    z13 = tmp7 - z3;                                                            \
+                                                                                \
+    dst5 = z13 + z2;                                                            \
+    dst3 = z13 - z2;                                                            \
+    dst1 = z11 + z4;                                                            \
+    dst7 = z11 - z4;                                                            \
   }
 
 void
@@ -184,7 +185,7 @@ fdct_islow_msa (DCTELEM *data)
   z13_r = z1_r + z13_r * __msa_splati_w(const2, 2);
   z13_l = z1_l + z13_l * __msa_splati_w(const2, 2);
 
-  //Descale
+  /* Descale */
   SRARI_W4_SW(z12_l, z12_r, z13_l, z13_r, (CONST_BITS - PASS1_BITS));
   PCKEV_H2_SH(z12_l, z12_r, z13_l, z13_r, dst6, dst2);
 
@@ -203,7 +204,7 @@ fdct_islow_msa (DCTELEM *data)
                tmp6_l, tmp7_r, tmp7_l);
   FDCT_ISLOW_ODD_MULTIPLY(tmp4_r, tmp4_l, tmp5_r, tmp5_l, tmp6_r, tmp6_l,
                           tmp7_r, tmp7_l, z1_r, z1_l, z2_r, z2_l, z3_r, z3_l,
-                          z4_r, z4_l);
+                          z4_r, z4_l, const0, const1);
 
   ADD4(z3_r, z5_r, z3_l, z5_l, z4_r, z5_r, z4_l, z5_l,
        z3_r, z3_l, z4_r, z4_l);
@@ -217,7 +218,7 @@ fdct_islow_msa (DCTELEM *data)
   tmp6_l += z2_l + z3_l;
   tmp7_l += z1_l + z4_l;
 
-  //Descale
+  /* Descale */
   SRARI_W4_SW(tmp4_r, tmp5_r, tmp6_r, tmp7_r, (CONST_BITS - PASS1_BITS));
   SRARI_W4_SW(tmp4_l, tmp5_l, tmp6_l, tmp7_l, (CONST_BITS - PASS1_BITS));
   PCKEV_H2_SH(tmp4_l, tmp4_r, tmp5_l, tmp5_r, dst7, dst5);
@@ -254,20 +255,19 @@ fdct_islow_msa (DCTELEM *data)
   z1_r = z1_r * __msa_splati_w(const2, 0);
   z1_l = z1_l * __msa_splati_w(const2, 0);
 
-
   z12_r = z1_r + z12_r * __msa_splati_w(const2, 1);
   z12_l = z1_l + z12_l * __msa_splati_w(const2, 1);
   z13_r = z1_r + z13_r * __msa_splati_w(const2, 2);
   z13_l = z1_l + z13_l * __msa_splati_w(const2, 2);
 
-  //Descale
+  /* Descale */
   SRARI_W4_SW(z12_l, z12_r, z13_l, z13_r, (CONST_BITS + PASS1_BITS));
   PCKEV_H2_SH(z12_l, z12_r, z13_l, z13_r, dst6, dst2);
 
-  ADD4(tmp4_r, tmp7_r, tmp5_r, tmp6_r, tmp4_r, tmp6_r, tmp5_r, tmp7_r,
-       z1_r, z2_r, z3_r, z4_r);
-  ADD4(tmp4_l, tmp7_l, tmp5_l, tmp6_l, tmp4_l, tmp6_l, tmp5_l, tmp7_l,
-       z1_l, z2_l, z3_l, z4_l);
+  ADD4(tmp4_r, tmp7_r, tmp5_r, tmp6_r, tmp4_r, tmp6_r, tmp5_r, tmp7_r, z1_r,
+       z2_r, z3_r, z4_r);
+  ADD4(tmp4_l, tmp7_l, tmp5_l, tmp6_l, tmp4_l, tmp6_l, tmp5_l, tmp7_l, z1_l,
+       z2_l, z3_l, z4_l);
 
   ADD2(z3_r, z4_r, z3_l, z4_l, z5_r, z5_l);
 
@@ -276,10 +276,9 @@ fdct_islow_msa (DCTELEM *data)
 
   FDCT_ISLOW_ODD_MULTIPLY(tmp4_r, tmp4_l, tmp5_r, tmp5_l, tmp6_r, tmp6_l,
                           tmp7_r, tmp7_l, z1_r, z1_l, z2_r, z2_l, z3_r, z3_l,
-                          z4_r, z4_l);
+                          z4_r, z4_l, const0, const1);
 
-  ADD4(z3_r, z5_r, z3_l, z5_l, z4_r, z5_r, z4_l, z5_l,
-       z3_r, z3_l, z4_r, z4_l);
+  ADD4(z3_r, z5_r, z3_l, z5_l, z4_r, z5_r, z4_l, z5_l, z3_r, z3_l, z4_r, z4_l);
 
   tmp4_r += z1_r + z3_r;
   tmp5_r += z2_r + z4_r;
@@ -290,7 +289,7 @@ fdct_islow_msa (DCTELEM *data)
   tmp6_l += z2_l + z3_l;
   tmp7_l += z1_l + z4_l;
 
-  //Descale
+  /* Descale */
   SRARI_W4_SW(tmp4_r, tmp5_r, tmp6_r, tmp7_r, (CONST_BITS + PASS1_BITS));
   SRARI_W4_SW(tmp4_l, tmp5_l, tmp6_l, tmp7_l, (CONST_BITS + PASS1_BITS));
   PCKEV_H2_SH(tmp4_l, tmp4_r, tmp5_l, tmp5_r, dst7, dst5);
@@ -312,17 +311,17 @@ fdct_ifast_msa (DCTELEM *data)
 
   /* Pass1 */
   /* Transpose */
-  TRANSPOSE8x8_SH_SH(val0, val1, val2, val3, val4, val5, val6, val7,
-                     val0, val1, val2, val3, val4, val5, val6, val7);
-  FDCT_IFAST_1PASS(val0, val1, val2, val3, val4, val5, val6, val7,
-                   dst0, dst1, dst2, dst3, dst4, dst5, dst6, dst7);
+  TRANSPOSE8x8_SH_SH(val0, val1, val2, val3, val4, val5, val6, val7, val0,
+                     val1, val2, val3, val4, val5, val6, val7);
+  FDCT_IFAST_1PASS(val0, val1, val2, val3, val4, val5, val6, val7, dst0,
+                   dst1, dst2, dst3, dst4, dst5, dst6, dst7, const0);
 
   /* Pass 2 */
   /* Transpose */
-  TRANSPOSE8x8_SH_SH(dst0, dst1, dst2, dst3, dst4, dst5, dst6, dst7,
-                     val0, val1, val2, val3, val4, val5, val6, val7);
-  FDCT_IFAST_1PASS(val0, val1, val2, val3, val4, val5, val6, val7,
-                   dst0, dst1, dst2, dst3, dst4, dst5, dst6, dst7);
+  TRANSPOSE8x8_SH_SH(dst0, dst1, dst2, dst3, dst4, dst5, dst6, dst7, val0,
+                     val1, val2, val3, val4, val5, val6, val7);
+  FDCT_IFAST_1PASS(val0, val1, val2, val3, val4, val5, val6, val7, dst0,
+                   dst1, dst2, dst3, dst4, dst5, dst6, dst7, const0);
 
   /* Store transformed data */
   ST_SH8(dst0, dst1, dst2, dst3, dst4, dst5, dst6, dst7, data, 8);
