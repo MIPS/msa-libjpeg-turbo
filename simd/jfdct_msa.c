@@ -160,11 +160,11 @@ fdct_islow_msa (DCTELEM *data)
 
   /* Pass1 */
   /* Transpose */
-  TRANSPOSE8x8_SH_SH(val0, val1, val2, val3, val4, val5, val6, val7,
-                     val0, val1, val2, val3, val4, val5, val6, val7);
+  TRANSPOSE8x8_SH_SH(val0, val1, val2, val3, val4, val5, val6, val7, val0, val1,
+                     val2, val3, val4, val5, val6, val7);
 
-  BUTTERFLY_8(val0, val1, val2, val3, val4, val5, val6, val7,
-              tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7);
+  BUTTERFLY_8(val0, val1, val2, val3, val4, val5, val6, val7, tmp0, tmp1, tmp2,
+              tmp3, tmp4, tmp5, tmp6, tmp7);
 
   BUTTERFLY_4(tmp0, tmp1, tmp2, tmp3, tmp10, tmp11, tmp12, tmp13);
 
@@ -194,7 +194,7 @@ fdct_islow_msa (DCTELEM *data)
 
   UNPCK_SH4_SW(tmp10, tmp11, tmp12, tmp13, z1_r, z1_l, z2_r, z2_l, z3_r, z3_l,
                z4_r, z4_l);
-  tmp10 = tmp12 + tmp13; // z3 + z4
+  tmp10 = tmp12 + tmp13; /* z3 + z4 */
   UNPCK_SH_SW(tmp10, z5_r, z5_l);
 
   z5_r = z5_r * __msa_splati_w(const2, 3);
@@ -206,8 +206,7 @@ fdct_islow_msa (DCTELEM *data)
                           tmp7_r, tmp7_l, z1_r, z1_l, z2_r, z2_l, z3_r, z3_l,
                           z4_r, z4_l, const0, const1);
 
-  ADD4(z3_r, z5_r, z3_l, z5_l, z4_r, z5_r, z4_l, z5_l,
-       z3_r, z3_l, z4_r, z4_l);
+  ADD4(z3_r, z5_r, z3_l, z5_l, z4_r, z5_r, z4_l, z5_l, z3_r, z3_l, z4_r, z4_l);
 
   tmp4_r += z1_r + z3_r;
   tmp5_r += z2_r + z4_r;
@@ -227,8 +226,8 @@ fdct_islow_msa (DCTELEM *data)
   /* Pass 2 */
 
   /* Transpose */
-  TRANSPOSE8x8_SH_SH(dst0, dst1, dst2, dst3, dst4, dst5, dst6, dst7,
-                     val0, val1, val2, val3, val4, val5, val6, val7);
+  TRANSPOSE8x8_SH_SH(dst0, dst1, dst2, dst3, dst4, dst5, dst6, dst7, val0, val1,
+                     val2, val3, val4, val5, val6, val7);
 
   UNPCK_SH4_SW(val0, val1, val2, val3, val0_r, val0_l, val1_r, val1_l, val2_r,
                val2_l, val3_r, val3_l);
@@ -311,17 +310,17 @@ fdct_ifast_msa (DCTELEM *data)
 
   /* Pass1 */
   /* Transpose */
-  TRANSPOSE8x8_SH_SH(val0, val1, val2, val3, val4, val5, val6, val7, val0,
-                     val1, val2, val3, val4, val5, val6, val7);
-  FDCT_IFAST_1PASS(val0, val1, val2, val3, val4, val5, val6, val7, dst0,
-                   dst1, dst2, dst3, dst4, dst5, dst6, dst7, const0);
+  TRANSPOSE8x8_SH_SH(val0, val1, val2, val3, val4, val5, val6, val7, val0, val1,
+                     val2, val3, val4, val5, val6, val7);
+  FDCT_IFAST_1PASS(val0, val1, val2, val3, val4, val5, val6, val7, dst0, dst1,
+                   dst2, dst3, dst4, dst5, dst6, dst7, const0);
 
   /* Pass 2 */
   /* Transpose */
-  TRANSPOSE8x8_SH_SH(dst0, dst1, dst2, dst3, dst4, dst5, dst6, dst7, val0,
-                     val1, val2, val3, val4, val5, val6, val7);
-  FDCT_IFAST_1PASS(val0, val1, val2, val3, val4, val5, val6, val7, dst0,
-                   dst1, dst2, dst3, dst4, dst5, dst6, dst7, const0);
+  TRANSPOSE8x8_SH_SH(dst0, dst1, dst2, dst3, dst4, dst5, dst6, dst7, val0, val1,
+                     val2, val3, val4, val5, val6, val7);
+  FDCT_IFAST_1PASS(val0, val1, val2, val3, val4, val5, val6, val7, dst0, dst1,
+                   dst2, dst3, dst4, dst5, dst6, dst7, const0);
 
   /* Store transformed data */
   ST_SH8(dst0, dst1, dst2, dst3, dst4, dst5, dst6, dst7, data, 8);
