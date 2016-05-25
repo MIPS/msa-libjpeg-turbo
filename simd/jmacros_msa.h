@@ -30,16 +30,12 @@
 #ifdef CLANG_BUILD
   #define MSA_ADDVI_H(a, b)  __msa_addvi_h((v8i16) a, b)
   #define MSA_ADDVI_W(a, b)  __msa_addvi_w((v4i32) a, b)
-  #define MSA_MULVI_H(a, b)  __msa_mulv_h((v8i16) a, __msa_ldi_h(b))
-  #define MSA_MULVI_W(a, b)  __msa_mulv_w((v4i32) a, __msa_ldi_w(b))
   #define MSA_SLLI_W(a, b)   __msa_slli_w((v4i32) a, b)
   #define MSA_SRAI_H(a, b)   __msa_srai_h((v8i16) a, b)
   #define MSA_SRAI_W(a, b)   __msa_srai_w((v4i32) a, b)
 #else
   #define MSA_ADDVI_H(a, b)  (a + b)
   #define MSA_ADDVI_W(a, b)  (a + b)
-  #define MSA_MULVI_H(a, b)  (a * b)
-  #define MSA_MULVI_W(a, b)  (a * b)
   #define MSA_SLLI_W(a, b)   (a << b)
   #define MSA_SRAI_H(a, b)   (a >> b)
   #define MSA_SRAI_W(a, b)   (a >> b)

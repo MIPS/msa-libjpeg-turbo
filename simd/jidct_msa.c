@@ -675,10 +675,10 @@ idct_4x4_msa (JCOEFPTR quantptr, JCOEFPTR block, JSAMPARRAY output_buf)
     d0_r = MSA_SLLI_W(d0_r, (CONST_BITS + 1));
     d0_l = MSA_SLLI_W(d0_l, (CONST_BITS + 1));
     /* tmp2 = MULTIPLY(z2, FIX_1_847759065) + MULTIPLY(z3, - FIX_0_765366865); */
-    d2_r = MSA_MULVI_W(d2_r, FIX_1_847759065);
-    d2_l = MSA_MULVI_W(d2_l, FIX_1_847759065);
-    d6_r = MSA_MULVI_W(d6_r, -FIX_0_765366865);
-    d6_l = MSA_MULVI_W(d6_l, -FIX_0_765366865);
+    d2_r = d2_r * __msa_fill_w(FIX_1_847759065);
+    d2_l = d2_l * __msa_fill_w(FIX_1_847759065);
+    d6_r = d6_r * __msa_fill_w(-FIX_0_765366865);
+    d6_l = d6_l * __msa_fill_w(-FIX_0_765366865);
 
     d2_r += d6_r;
     d2_l += d6_l;
@@ -691,23 +691,23 @@ idct_4x4_msa (JCOEFPTR quantptr, JCOEFPTR block, JSAMPARRAY output_buf)
     UNPCK_SH_SW(val5, d5_r, d5_l);//z2
     UNPCK_SH_SW(val7, d7_r, d7_l);//z1
 
-    tmp0_r = MSA_MULVI_W(d7_r, -FIX_0_211164243)
-            + MSA_MULVI_W(d5_r, FIX_1_451774981)
-            - MSA_MULVI_W(d3_r, FIX_2_172734803)
-            + MSA_MULVI_W(d1_r, FIX_1_061594337);
-    tmp0_l = MSA_MULVI_W(d7_l, -FIX_0_211164243)
-            + MSA_MULVI_W(d5_l, FIX_1_451774981)
-            - MSA_MULVI_W(d3_l, FIX_2_172734803)
-            + MSA_MULVI_W(d1_l, FIX_1_061594337);
+    tmp0_r = d7_r * __msa_fill_w(-FIX_0_211164243)
+            + d5_r * __msa_fill_w(FIX_1_451774981)
+            - d3_r * __msa_fill_w(FIX_2_172734803)
+            + d1_r * __msa_fill_w(FIX_1_061594337);
+    tmp0_l = d7_l * __msa_fill_w(-FIX_0_211164243)
+            + d5_l * __msa_fill_w(FIX_1_451774981)
+            - d3_l * __msa_fill_w(FIX_2_172734803)
+            + d1_l * __msa_fill_w(FIX_1_061594337);
 
-    tmp2_r = MSA_MULVI_W(d7_r, -FIX_0_509795579)
-            - MSA_MULVI_W(d5_r, FIX_0_601344887)
-            + MSA_MULVI_W(d3_r, FIX_0_899976223)
-            + MSA_MULVI_W(d1_r, FIX_2_562915447);
-    tmp2_l = MSA_MULVI_W(d7_l, -FIX_0_509795579)
-            - MSA_MULVI_W(d5_l, FIX_0_601344887)
-            + MSA_MULVI_W(d3_l, FIX_0_899976223)
-            + MSA_MULVI_W(d1_l, FIX_2_562915447);
+    tmp2_r = d7_r * __msa_fill_w(-FIX_0_509795579)
+            - d5_r * __msa_fill_w(FIX_0_601344887)
+            + d3_r * __msa_fill_w(FIX_0_899976223)
+            + d1_r * __msa_fill_w(FIX_2_562915447);
+    tmp2_l = d7_l * __msa_fill_w(-FIX_0_509795579)
+            - d5_l * __msa_fill_w(FIX_0_601344887)
+            + d3_l * __msa_fill_w(FIX_0_899976223)
+            + d1_l * __msa_fill_w(FIX_2_562915447);
 
     BUTTERFLY_4(tmp10_r, tmp12_r, tmp0_r, tmp2_r, dst0_r, dst1_r, dst2_r,
                 dst3_r);
@@ -737,23 +737,23 @@ idct_4x4_msa (JCOEFPTR quantptr, JCOEFPTR block, JSAMPARRAY output_buf)
   //Even Part
   d0_r = MSA_SLLI_W(d0_r, (CONST_BITS + 1));
 
-  d2_r = MSA_MULVI_W(d2_r, FIX_1_847759065);
-  d6_r = MSA_MULVI_W(d6_r, -FIX_0_765366865);
+  d2_r = d2_r * __msa_fill_w(FIX_1_847759065);
+  d6_r = d6_r * __msa_fill_w(-FIX_0_765366865);
   d2_r += d6_r;
 
   tmp10_r = d0_r + d2_r;
   tmp12_r = d0_r - d2_r;
 
   //Odd Part
-  tmp0_r = MSA_MULVI_W(d7_r, -FIX_0_211164243)
-          + MSA_MULVI_W(d5_r, FIX_1_451774981)
-          - MSA_MULVI_W(d3_r, FIX_2_172734803)
-          + MSA_MULVI_W(d1_r, FIX_1_061594337);
+  tmp0_r = d7_r * __msa_fill_w(-FIX_0_211164243)
+          + d5_r * __msa_fill_w(FIX_1_451774981)
+          - d3_r * __msa_fill_w(FIX_2_172734803)
+          + d1_r * __msa_fill_w(FIX_1_061594337);
 
-  tmp2_r = MSA_MULVI_W(d7_r, -FIX_0_509795579)
-          - MSA_MULVI_W(d5_r, FIX_0_601344887)
-          + MSA_MULVI_W(d3_r, FIX_0_899976223)
-          + MSA_MULVI_W(d1_r, FIX_2_562915447);
+  tmp2_r = d7_r * __msa_fill_w(-FIX_0_509795579)
+          - d5_r * __msa_fill_w(FIX_0_601344887)
+          + d3_r * __msa_fill_w(FIX_0_899976223)
+          + d1_r * __msa_fill_w(FIX_2_562915447);
 
   BUTTERFLY_4(tmp10_r, tmp12_r, tmp0_r, tmp2_r, dst0_r, dst1_r, dst2_r,
               dst3_r);
@@ -840,14 +840,14 @@ idct_2x2_msa (JCOEFPTR quantptr, JCOEFPTR block, JSAMPARRAY output_buf)
     UNPCK_SH_SW(val5, d5_r, d5_l);//z2
     UNPCK_SH_SW(val7, d7_r, d7_l);//z1
 
-    tmp0_r = MSA_MULVI_W(d7_r, -FIX_0_720959822)
-            + MSA_MULVI_W(d5_r, FIX_0_850430095)
-            - MSA_MULVI_W(d3_r, FIX_1_272758580)
-            + MSA_MULVI_W(d1_r, FIX_3_624509785);
-    tmp0_l = MSA_MULVI_W(d7_l, -FIX_0_720959822)
-            + MSA_MULVI_W(d5_l, FIX_0_850430095)
-            - MSA_MULVI_W(d3_l, FIX_1_272758580)
-            + MSA_MULVI_W(d1_l, FIX_3_624509785);
+    tmp0_r = d7_r * __msa_fill_w(-FIX_0_720959822)
+            + d5_r * __msa_fill_w(FIX_0_850430095)
+            - d3_r * __msa_fill_w(FIX_1_272758580)
+            + d1_r * __msa_fill_w(FIX_3_624509785);
+    tmp0_l = d7_l * __msa_fill_w(-FIX_0_720959822)
+            + d5_l * __msa_fill_w(FIX_0_850430095)
+            - d3_l * __msa_fill_w(FIX_1_272758580)
+            + d1_l * __msa_fill_w(FIX_3_624509785);
 
     BUTTERFLY_4(tmp10_r, tmp10_l, tmp0_l, tmp0_r, dst0_r, dst0_l, dst1_l,
                 dst1_r);
