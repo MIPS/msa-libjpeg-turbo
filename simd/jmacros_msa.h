@@ -44,14 +44,63 @@
 #endif
 
 #define LD_B(RTYPE, psrc) *((RTYPE *)(psrc))
+#define LD_UB(...) LD_B(v16u8, __VA_ARGS__)
 #define LD_SB(...) LD_B(v16i8, __VA_ARGS__)
+
 #define LD_H(RTYPE, psrc) *((RTYPE *)(psrc))
 #define LD_SH(...) LD_H(v8i16, __VA_ARGS__)
 
 #define ST_B(RTYPE, in, pdst) *((RTYPE *)(pdst)) = (in)
+#define ST_UB(...) ST_B(v16u8, __VA_ARGS__)
+
 #define ST_H(RTYPE, in, pdst) *((RTYPE *)(pdst)) = (in)
 
 #if (__mips_isa_rev >= 6)
+  #define LW(psrc) ( {                                    \
+    unsigned char *psrc_lw_m = (unsigned char *) (psrc);  \
+    unsigned int val_m;                                   \
+                                                          \
+    asm volatile (                                        \
+        "lw  %[val_m],  %[psrc_lw_m]  \n\t"               \
+                                                          \
+        : [val_m] "=r" (val_m)                            \
+        : [psrc_lw_m] "m" (*psrc_lw_m)                    \
+    );                                                    \
+                                                          \
+    val_m;                                                \
+  } )
+
+  #if (__mips == 64)
+    #define LD(psrc) ( {                                    \
+      unsigned char *psrc_ld_m = (unsigned char *) (psrc);  \
+      unsigned long long val_m = 0;                         \
+                                                            \
+      asm volatile (                                        \
+          "ld  %[val_m],  %[psrc_ld_m]  \n\t"               \
+                                                            \
+          : [val_m] "=r" (val_m)                            \
+          : [psrc_ld_m] "m" (*psrc_ld_m)                    \
+      );                                                    \
+                                                            \
+      val_m;                                                \
+    } )
+  #else  // !(__mips == 64)
+    #define LD(psrc) ( {                                                   \
+      unsigned char *psrc_ld_m = (unsigned char *) (psrc);                 \
+      unsigned int val0_m, val1_m;                                         \
+      unsigned long long val_m = 0;                                        \
+                                                                           \
+      val0_m = LW(psrc_ld_m);                                              \
+      val1_m = LW(psrc_ld_m + 4);                                          \
+                                                                           \
+      val_m = (unsigned long long) (val1_m);                               \
+      val_m = (unsigned long long) ((val_m << 32) & 0xFFFFFFFF00000000);   \
+      val_m = (unsigned long long) (val_m | (unsigned long long) val0_m);  \
+                                                                           \
+      val_m;                                                               \
+    } )
+  #endif  // (__mips == 64)
+
   #define SW(val, pdst) {                                 \
     unsigned char *pdst_sw_m = (unsigned char *) (pdst);  \
     unsigned int val_m = (val);                           \
@@ -77,6 +126,51 @@
   }
 
 #else  // !(__mips_isa_rev >= 6)
+  #define LW(psrc) ( {                                    \
+    unsigned char *psrc_lw_m = (unsigned char *) (psrc);  \
+    unsigned int val_m;                                   \
+                                                          \
+    asm volatile (                                        \
+        "ulw  %[val_m],  %[psrc_lw_m]  \n\t"              \
+                                                          \
+        : [val_m] "=r" (val_m)                            \
+        : [psrc_lw_m] "m" (*psrc_lw_m)                    \
+    );                                                    \
+                                                          \
+    val_m;                                                \
+  } )
+
+  #if (__mips == 64)
+    #define LD(psrc) ( {                                    \
+      unsigned char *psrc_ld_m = (unsigned char *) (psrc);  \
+      unsigned long long val_m = 0;                         \
+                                                            \
+      asm volatile (                                        \
+          "uld  %[val_m],  %[psrc_ld_m]  \n\t"              \
+                                                            \
+          : [val_m] "=r" (val_m)                            \
+          : [psrc_ld_m] "m" (*psrc_ld_m)                    \
+      );                                                    \
+                                                            \
+      val_m;                                                \
+    } )
+  #else  // !(__mips == 64)
+    #define LD(psrc) ( {                                                  \
+      unsigned char *psrc_ld_m = (unsigned char *) (psrc);                 \
+      unsigned int val0_m, val1_m;                                         \
+      unsigned long long val_m = 0;                                        \
+                                                                           \
+      val0_m = LW(psrc_ld_m);                                              \
+      val1_m = LW(psrc_ld_m + 4);                                          \
+                                                                           \
+      val_m = (unsigned long long) (val1_m);                               \
+      val_m = (unsigned long long) ((val_m << 32) & 0xFFFFFFFF00000000);   \
+      val_m = (unsigned long long) (val_m | (unsigned long long) val0_m);  \
+                                                                           \
+      val_m;                                                               \
+    } )
+  #endif  // (__mips == 64)
+
   #define SW(val, pdst) {                                 \
     unsigned char *pdst_sw_m = (unsigned char *) (pdst);  \
     unsigned int val_m = (val);                           \
@@ -142,7 +236,14 @@
   ST_B(RTYPE, in0, (pdst));                     \
   ST_B(RTYPE, in1, (pdst) + stride);            \
 }
+#define ST_UB2(...) ST_B2(v16u8, __VA_ARGS__)
 #define ST_SB2(...) ST_B2(v16i8, __VA_ARGS__)
+
+#define ST_B4(RTYPE, in0, in1, in2, in3, pdst, stride) {  \
+  ST_B2(RTYPE, in0, in1, (pdst), stride);                 \
+  ST_B2(RTYPE, in2, in3, (pdst) + 2 * stride, stride);    \
+}
+#define ST_UB4(...) ST_B4(v16u8, __VA_ARGS__)
 
 /* Description : Store vectors of 8 halfword elements with stride
    Arguments   : Inputs - in0, in1, pdst, stride
@@ -186,6 +287,19 @@
   out0 = (RTYPE) __msa_sldi_b((v16i8) zero_m, (v16i8) in0, slide_val);  \
   out1 = (RTYPE) __msa_sldi_b((v16i8) zero_m, (v16i8) in1, slide_val);  \
 }
+
+/* Description : Shuffle byte vector elements as per mask vector
+   Arguments   : Inputs  - in0, in1, in2, in3, mask0, mask1
+                 Outputs - out0, out1
+                 Return Type - as per RTYPE
+   Details     : Byte elements from 'in0' & 'in1' are copied selectively to
+                 'out0' as per control vector 'mask0'
+*/
+#define VSHF_B2(RTYPE, in0, in1, in2, in3, mask0, mask1, out0, out1) {   \
+  out0 = (RTYPE) __msa_vshf_b((v16i8) mask0, (v16i8) in1, (v16i8) in0);  \
+  out1 = (RTYPE) __msa_vshf_b((v16i8) mask1, (v16i8) in3, (v16i8) in2);  \
+}
+#define VSHF_B2_SB(...) VSHF_B2(v16i8, __VA_ARGS__)
 
 /* Description : Clips all halfword elements of input vector between min & max
                  out = (in < min) ? min : ((in > max) ? max : in)
@@ -279,6 +393,13 @@
 }
 #define ILVR_H2_UB(...) ILVR_H2(v16u8, __VA_ARGS__)
 #define ILVR_H2_SH(...) ILVR_H2(v8i16, __VA_ARGS__)
+
+#define ILVR_H4(RTYPE, in0, in1, in2, in3, in4, in5, in6, in7,  \
+                out0, out1, out2, out3) {                       \
+  ILVR_H2(RTYPE, in0, in1, in2, in3, out0, out1);               \
+  ILVR_H2(RTYPE, in4, in5, in6, in7, out2, out3);               \
+}
+#define ILVR_H4_UB(...) ILVR_H4(v16u8, __VA_ARGS__)
 
 /* Description : Interleave both left and right half of input vectors
    Arguments   : Inputs  - in0, in1
@@ -511,6 +632,44 @@
 #define SUB2(in0, in1, in2, in3, out0, out1) {  \
   out0 = in0 - in1;                             \
   out1 = in2 - in3;                             \
+}
+#define SUB4(in0, in1, in2, in3, in4, in5, in6, in7,  \
+             out0, out1, out2, out3) {                \
+  out0 = in0 - in1;                                   \
+  out1 = in2 - in3;                                   \
+  out2 = in4 - in5;                                   \
+  out3 = in6 - in7;                                   \
+}
+
+/* Description : Sign extend byte elements from input vector and return
+                 halfword results in pair of vectors
+   Arguments   : Input   - in           (byte vector)
+                 Outputs - out0, out1   (sign extended halfword vectors)
+                 Return Type - signed halfword
+   Details     : Sign bit of byte elements from input vector 'in' is
+                 extracted and interleaved right with same vector 'in0' to
+                 generate 8 signed halfword elements in 'out0'
+                 Then interleaved left with same vector 'in0' to
+                 generate 8 signed halfword elements in 'out1'
+*/
+#define UNPCK_SB_SH(in, out0, out1) {     \
+  v16i8 tmp_m;                            \
+                                          \
+  tmp_m = __msa_clti_s_b((v16i8) in, 0);  \
+  ILVRL_B2_SH(tmp_m, in, out0, out1);     \
+}
+
+/* Description : Zero extend unsigned byte elements to halfword elements
+   Arguments   : Input   - in          (unsigned byte vector)
+                 Outputs - out0, out1  (unsigned  halfword vectors)
+                 Return Type - signed halfword
+   Details     : Zero extended right half of vector is returned in 'out0'
+                 Zero extended left half of vector is returned in 'out1'
+*/
+#define UNPCK_UB_SH(in, out0, out1) {   \
+  v16i8 zero_m = { 0 };                 \
+                                        \
+  ILVRL_B2_SH(zero_m, in, out0, out1);  \
 }
 
 /* Description : Sign extend halfword elements from input vector and return
