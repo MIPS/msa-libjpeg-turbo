@@ -25,6 +25,7 @@
 #include "../jinclude.h"
 #include "../jpeglib.h"
 #include "../jsimd.h"
+
 #include "jmacros_msa.h"
 
 /*
@@ -44,17 +45,17 @@ image_upsample_fancy_h2v1_msa (JSAMPARRAY src, JSAMPARRAY dst,
   v8i16 zero = {0};
   v16i8 out0, out1, tmp_r, tmp_l, cur, left, right;
 
-  for(row = 0; row < height; row++) {
-    // Prepare first 16 width column
+  for (row = 0; row < height; row++) {
+    /* Prepare first 16 width column */
     cur = LD_SB(src[row]);
     tmp_r = LD_SB(src[row] + 16);
     tmp_l = __msa_splati_b(cur, 0);
 
-    for(col = 0; col < width; col += 16) {
-      left = __msa_sldi_b(cur, tmp_l, 15); // -1 0 1 2 ... 12 13 14
-      right = __msa_sldi_b(tmp_r, cur, 1); // 1 2 3 4 ... 14 15 16
+    for (col = 0; col < width; col += 16) {
+      left = __msa_sldi_b(cur, tmp_l, 15); /* -1 0 1 2 ... 12 13 14 */
+      right = __msa_sldi_b(tmp_r, cur, 1); /* 1 2 3 4 ... 14 15 16 */
 
-      // Promote data to 16 bit
+      /* Promote data to 16 bit */
       ILVRL_B2_SH(zero, left, left_r, left_l);
       ILVRL_B2_SH(zero, right, right_r, right_l);
       ILVRL_B2_SH(zero, cur, cur_r, cur_l);
@@ -77,12 +78,12 @@ image_upsample_fancy_h2v1_msa (JSAMPARRAY src, JSAMPARRAY dst,
 
       ST_SB2(out0, out1, dst[row] + (col << 1), 16);
 
-      // Prepare for next 16 width column
+      /* Prepare for next 16 width column */
       tmp_l = cur;
       cur = tmp_r;
       tmp_r = LD_SB(src[row] + col + 32);
     }
-    // Re-substitute last pixel
+    /* Re-substitute last pixel */
     *(dst[row] + 2 * width - 1) = *(src[row] + width - 1);
   }
 }
