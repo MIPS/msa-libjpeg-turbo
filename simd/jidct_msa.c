@@ -79,12 +79,12 @@ idct_islow_msa (JCOEFPTR quantptr, JCOEFPTR block, JSAMPARRAY output_buf)
   v4i32 z1_r, z1_l, z2_r, z2_l, z3_r, z3_l, z4_r, z4_l, z5_r, z5_l;
   v4i32 dst0_r, dst1_r, dst2_r, dst3_r, dst4_r, dst5_r, dst6_r, dst7_r;
   v4i32 dst0_l, dst1_l, dst2_l, dst3_l, dst4_l, dst5_l, dst6_l, dst7_l;
-  v4i32 const0 = { FIX_0_541196100, -FIX_1_847759065,
-                   FIX_0_765366865, FIX_1_175875602 };
-  v4i32 const1 = { -FIX_0_899976223, -FIX_2_562915447,
-                   -FIX_1_961570560, -FIX_0_390180644 };
-  v4i32 const2 = { FIX_0_298631336, FIX_2_053119869,
-                   FIX_3_072711026, FIX_1_501321110 };
+  v4i32 const0 = {FIX_0_541196100, -FIX_1_847759065,
+                  FIX_0_765366865, FIX_1_175875602};
+  v4i32 const1 = {-FIX_0_899976223, -FIX_2_562915447,
+                  -FIX_1_961570560, -FIX_0_390180644};
+  v4i32 const2 = {FIX_0_298631336, FIX_2_053119869,
+                  FIX_3_072711026, FIX_1_501321110};
   v8i16 reg_128 = __msa_ldi_h(128);
 
   /* Dequantize */
@@ -115,13 +115,13 @@ idct_islow_msa (JCOEFPTR quantptr, JCOEFPTR block, JSAMPARRAY output_buf)
     /* Note results are scaled up by sqrt(8) compared to a true IDCT; */
     /* furthermore, we scale the results by 2**PASS1_BITS. */
 
-    LD_SH6(quantptr + DCTSIZE, DCTSIZE, quant1, quant2, quant3, quant4,
-           quant5, quant6);
+    LD_SH6(quantptr + DCTSIZE, DCTSIZE, quant1, quant2, quant3, quant4, quant5,
+           quant6);
     quant7 = LD_SH(quantptr + 7 * DCTSIZE);
-    MUL4(val0, quant0, val1, quant1, val2, quant2, val3, quant3, val0,
-         val1, val2, val3);
-    MUL4(val4, quant4, val5, quant5, val6, quant6, val7, quant7, val4,
-         val5, val6, val7);
+    MUL4(val0, quant0, val1, quant1, val2, quant2, val3, quant3, val0, val1,
+         val2, val3);
+    MUL4(val4, quant4, val5, quant5, val6, quant6, val7, quant7, val4, val5,
+         val6, val7);
 
     UNPCK_SH_SW(val0, d0_r, d0_l);
     UNPCK_SH_SW(val2, d2_r, d2_l);
@@ -146,9 +146,9 @@ idct_islow_msa (JCOEFPTR quantptr, JCOEFPTR block, JSAMPARRAY output_buf)
 
     SLLI_W4_SW(tmp0_r, tmp0_l, tmp1_r, tmp1_l, CONST_BITS);
 
-    BUTTERFLY_8(tmp0_r, tmp0_l, tmp1_r, tmp1_l, tmp2_l, tmp2_r, tmp3_l,
-                tmp3_r, tmp10_r, tmp10_l, tmp11_r, tmp11_l, tmp12_l,
-                tmp12_r, tmp13_l, tmp13_r);
+    BUTTERFLY_8(tmp0_r, tmp0_l, tmp1_r, tmp1_l, tmp2_l, tmp2_r, tmp3_l, tmp3_r,
+                tmp10_r, tmp10_l, tmp11_r, tmp11_l, tmp12_l, tmp12_r, tmp13_l,
+                tmp13_r);
 
     UNPCK_SH_SW(val1, d1_r, d1_l);
     UNPCK_SH_SW(val3, d3_r, d3_l);
@@ -248,14 +248,10 @@ idct_islow_msa (JCOEFPTR quantptr, JCOEFPTR block, JSAMPARRAY output_buf)
     SUB2(tmp10_r, tmp3_r, tmp10_l, tmp3_l, dst7_r, dst7_l);
     SRARI_W2_SW(dst7_r, dst7_l, CONST_BITS - PASS1_BITS);
 
-    TRANSPOSE4x4_SW_SW(dst0_r, dst1_r, dst2_r, dst3_r, d0_r, d1_r, d2_r,
-                       d3_r);
-    TRANSPOSE4x4_SW_SW(dst4_r, dst5_r, dst6_r, dst7_r, d0_l, d1_l, d2_l,
-                       d3_l);
-    TRANSPOSE4x4_SW_SW(dst0_l, dst1_l, dst2_l, dst3_l, d4_r, d5_r, d6_r,
-                       d7_r);
-    TRANSPOSE4x4_SW_SW(dst4_l, dst5_l, dst6_l, dst7_l, d4_l, d5_l, d6_l,
-                       d7_l);
+    TRANSPOSE4x4_SW_SW(dst0_r, dst1_r, dst2_r, dst3_r, d0_r, d1_r, d2_r, d3_r);
+    TRANSPOSE4x4_SW_SW(dst4_r, dst5_r, dst6_r, dst7_r, d0_l, d1_l, d2_l, d3_l);
+    TRANSPOSE4x4_SW_SW(dst0_l, dst1_l, dst2_l, dst3_l, d4_r, d5_r, d6_r, d7_r);
+    TRANSPOSE4x4_SW_SW(dst4_l, dst5_l, dst6_l, dst7_l, d4_l, d5_l, d6_l, d7_l);
   }
 
   /* z1 = MULTIPLY(d2 + d6, FIX_0_541196100); */
@@ -272,17 +268,15 @@ idct_islow_msa (JCOEFPTR quantptr, JCOEFPTR block, JSAMPARRAY output_buf)
   ADD2(tmp3_r, z1_r, tmp3_l, z1_l, tmp3_r, tmp3_l);
   BUTTERFLY_4(d0_r, d0_l, d4_l, d4_r, tmp0_r, tmp0_l, tmp1_l, tmp1_r);
   SLLI_W4_SW(tmp0_r, tmp0_l, tmp1_r, tmp1_l, CONST_BITS);
-  BUTTERFLY_8(tmp0_r, tmp0_l, tmp1_r, tmp1_l, tmp2_l, tmp2_r, tmp3_l,
-              tmp3_r, tmp10_r, tmp10_l, tmp11_r, tmp11_l, tmp12_l, tmp12_r,
-              tmp13_l, tmp13_r);
+  BUTTERFLY_8(tmp0_r, tmp0_l, tmp1_r, tmp1_l, tmp2_l, tmp2_r, tmp3_l, tmp3_r,
+              tmp10_r, tmp10_l, tmp11_r, tmp11_l, tmp12_l, tmp12_r, tmp13_l,
+              tmp13_r);
   /* z1 = d7 + d1 */
   /* z2 = d5 + d3 */
-  ADD4(d7_r, d1_r, d7_l, d1_l, d5_r, d3_r, d5_l, d3_l, z1_r, z1_l, z2_r,
-       z2_l);
+  ADD4(d7_r, d1_r, d7_l, d1_l, d5_r, d3_r, d5_l, d3_l, z1_r, z1_l, z2_r, z2_l);
   /* z3 = d7 + d3 */
   /* z4 = d5 + d1 */
-  ADD4(d7_r, d3_r, d7_l, d3_l, d5_r, d1_r, d5_l, d1_l, z3_r, z3_l, z4_r,
-       z4_l);
+  ADD4(d7_r, d3_r, d7_l, d3_l, d5_r, d1_r, d5_l, d1_l, z3_r, z3_l, z4_r, z4_l);
   /* z5 = MULTIPLY(z3 + z4, FIX_1_175875602) */
   tmp = __msa_shf_w(const0, 0xFF);
   ADD2(z3_r, z4_r, z3_l, z4_l, z5_r, z5_l);
@@ -301,8 +295,7 @@ idct_islow_msa (JCOEFPTR quantptr, JCOEFPTR block, JSAMPARRAY output_buf)
   MUL2(z4_r, tmp, z4_l, tmp, z4_r, z4_l);
   /* z3 += z5 */
   /* z4 += z5 */
-  ADD4(z3_r, z5_r, z3_l, z5_l, z4_r, z5_r, z4_l, z5_l, z3_r, z3_l, z4_r,
-       z4_l);
+  ADD4(z3_r, z5_r, z3_l, z5_l, z4_r, z5_r, z4_l, z5_l, z3_r, z3_l, z4_r, z4_l);
   /* tmp0 = MULTIPLY(d7, FIX_0_298631336) */
   /* tmp0 += z1 + z3 */
   tmp = __msa_shf_w(const2, 0);
@@ -387,8 +380,8 @@ idct_islow_msa (JCOEFPTR quantptr, JCOEFPTR block, JSAMPARRAY output_buf)
   dst7_r = (v4i32) CLIP_SH_0_255(dst7_r + reg_128);
   res7 = (v16u8)__msa_pckev_b((v16i8) dst7_l, (v16i8) dst7_r);
 
-  TRANSPOSE8x8_UB_UB(res0, res1, res2, res3, res4, res5, res6, res7, res0,
-                     res1, res2, res3, res4, res5, res6, res7);
+  TRANSPOSE8x8_UB_UB(res0, res1, res2, res3, res4, res5, res6, res7, res0, res1,
+                     res2, res3, res4, res5, res6, res7);
 
   ST8x1_UB(res0, output_buf[0]);
   ST8x1_UB(res1, output_buf[1]);
@@ -412,8 +405,8 @@ idct_ifast_msa (JCOEFPTR quantptr, JCOEFPTR block, JSAMPARRAY output_buf)
   v8i16 z5, z10, z11, z12, z13;
   v4i32 z5_r, z5_l, z12_r, z12_l, z10_r, z10_l, z11_r, z11_l;
   v4i32 tmp11_r, tmp11_l, tmp12_r, tmp12_l, tmp13_l, tmp13_r;
-  v4i32 const0 = { FIX_1_414213562, FIX_1_847759065_fast,
-                   FIX_1_082392200, -FIX_2_613125930 };
+  v4i32 const0 = {FIX_1_414213562, FIX_1_847759065_fast,
+                  FIX_1_082392200, -FIX_2_613125930};
   v8i16 reg_128 = __msa_ldi_h(128);
   v4i32 tmp, tmp_r;
 
@@ -432,12 +425,12 @@ idct_ifast_msa (JCOEFPTR quantptr, JCOEFPTR block, JSAMPARRAY output_buf)
     /* Pass 1: process columns. */
     /* Note results are scaled up by sqrt(8) compared to a true IDCT; */
     /* furthermore, we scale the results by 2**PASS1_BITS. */
-    LD_SH8(quantptr, DCTSIZE, quant0, quant1, quant2, quant3, quant4,
-           quant5, quant6, quant7);
-    MUL4(val0, quant0, val1, quant1, val2, quant2, val3, quant3, val0,
-         val1, val2, val3);
-    MUL4(val4, quant4, val5, quant5, val6, quant6, val7, quant7, val4,
-         val5, val6, val7);
+    LD_SH8(quantptr, DCTSIZE, quant0, quant1, quant2, quant3, quant4, quant5,
+           quant6, quant7);
+    MUL4(val0, quant0, val1, quant1, val2, quant2, val3, quant3, val0, val1,
+         val2, val3);
+    MUL4(val4, quant4, val5, quant5, val6, quant6, val7, quant7, val4, val5,
+         val6, val7);
 
     /* Even Part */
     BUTTERFLY_4(val0, val2, val6, val4, tmp10, tmp13, tmp12, tmp11);
@@ -478,7 +471,7 @@ idct_ifast_msa (JCOEFPTR quantptr, JCOEFPTR block, JSAMPARRAY output_buf)
     tmp = __msa_splati_w(const0, 1);
     UNPCK_SH_SW(z10, z5_r, z5_l);
     UNPCK_SH_SW(z12, tmp11_r, tmp11_l);
-    //tmp11 = z11 - z13;
+    /* tmp11 = z11 - z13; */
     ADD2(z5_r, tmp11_r, z5_l, tmp11_l, z5_r, z5_l);
     MUL2(z5_r, tmp, z5_l, tmp, z5_r, z5_l);
     z5_r = MSA_SRAI_W(z5_r, CONST_BITS_FAST);
@@ -602,13 +595,13 @@ idct_ifast_msa (JCOEFPTR quantptr, JCOEFPTR block, JSAMPARRAY output_buf)
   dst3 = CLIP_SH_0_255(__msa_adds_s_h(MSA_SRAI_H(__msa_subs_s_h(tmp3, tmp4),
                                                  (PASS1_BITS + 3)), reg_128));
 
-  PCKEV_B4_UB(dst0, dst0, dst1, dst1, dst2, dst2, dst3, dst3, res0, res1,
-              res2, res3);
-  PCKEV_B4_UB(dst4, dst4, dst5, dst5, dst6, dst6, dst7, dst7, res4, res5,
-              res6, res7);
+  PCKEV_B4_UB(dst0, dst0, dst1, dst1, dst2, dst2, dst3, dst3, res0, res1, res2,
+              res3);
+  PCKEV_B4_UB(dst4, dst4, dst5, dst5, dst6, dst6, dst7, dst7, res4, res5, res6,
+              res7);
 
-  TRANSPOSE8x8_UB_UB(res0, res1, res2, res3, res4, res5, res6, res7, res0,
-                     res1, res2, res3, res4, res5, res6, res7);
+  TRANSPOSE8x8_UB_UB(res0, res1, res2, res3, res4, res5, res6, res7, res0, res1,
+                     res2, res3, res4, res5, res6, res7);
 
   ST8x1_UB(res0, output_buf[0]);
   ST8x1_UB(res1, output_buf[1]);
@@ -634,12 +627,12 @@ idct_4x4_msa (JCOEFPTR quantptr, JCOEFPTR block, JSAMPARRAY output_buf)
 
   /* Pass 1: process columns from input, store into work array. */
 
-  //Load coeff values
+  /* Load coeff values */
   LD_SH4(block, DCTSIZE, val0, val1, val2, val3);
   LD_SH2(block + 5 * DCTSIZE, DCTSIZE, val5, val6);
   val7 = LD_SH(block + 7 * DCTSIZE);
 
-  //Load quant value
+  /* Load quant value */
   quant0 = LD_SH(quantptr);
   res = (v4i32) (val1 | val2 | val3 | val5 | val6 | val7);
   if (__msa_test_bz_v((v16u8) res)) {
@@ -656,18 +649,19 @@ idct_4x4_msa (JCOEFPTR quantptr, JCOEFPTR block, JSAMPARRAY output_buf)
     /* Note results are scaled up by sqrt(8) compared to a true IDCT; */
     /* furthermore, we scale the results by 2**PASS1_BITS. */
 
-    //Load remaining quant values
+    /* Load remaining quant values */
     LD_SH2(quantptr + DCTSIZE, DCTSIZE, quant1, quant2);
     quant3 = LD_SH(quantptr + 3 * DCTSIZE);
     LD_SH2(quantptr + 5 * DCTSIZE, DCTSIZE, quant5, quant6);
     quant7 = LD_SH(quantptr + 7 * DCTSIZE);
-    //Dequantize
-    MUL4(val0, quant0, val1, quant1, val2, quant2, val3, quant3, val0,
-         val1, val2, val3);
+
+    /* Dequantize */
+    MUL4(val0, quant0, val1, quant1, val2, quant2, val3, quant3, val0, val1,
+         val2, val3);
     MUL2(val5, quant5, val6, quant6, val5, val6);
     val7 *= quant7;
 
-    //Even Part
+    /* Even Part */
     UNPCK_SH_SW(val0, d0_r, d0_l);
     UNPCK_SH_SW(val2, d2_r, d2_l);
     UNPCK_SH_SW(val6, d6_r, d6_l);
@@ -685,11 +679,11 @@ idct_4x4_msa (JCOEFPTR quantptr, JCOEFPTR block, JSAMPARRAY output_buf)
 
     BUTTERFLY_4(d0_r, d0_l, d2_l, d2_r, tmp10_r, tmp10_l, tmp12_l, tmp12_r);
 
-    //Odd Part
-    UNPCK_SH_SW(val1, d1_r, d1_l);//z4
-    UNPCK_SH_SW(val3, d3_r, d3_l);//z3
-    UNPCK_SH_SW(val5, d5_r, d5_l);//z2
-    UNPCK_SH_SW(val7, d7_r, d7_l);//z1
+    /* Odd Part */
+    UNPCK_SH_SW(val1, d1_r, d1_l); /* z4 */
+    UNPCK_SH_SW(val3, d3_r, d3_l); /* z3 */
+    UNPCK_SH_SW(val5, d5_r, d5_l); /* z2 */
+    UNPCK_SH_SW(val7, d7_r, d7_l); /* z1 */
 
     tmp0_r = d7_r * __msa_fill_w(-FIX_0_211164243)
             + d5_r * __msa_fill_w(FIX_1_451774981)
@@ -714,16 +708,13 @@ idct_4x4_msa (JCOEFPTR quantptr, JCOEFPTR block, JSAMPARRAY output_buf)
     BUTTERFLY_4(tmp10_l, tmp12_l, tmp0_l, tmp2_l, dst0_l, dst1_l, dst2_l,
                 dst3_l);
 
-    //Descale
-    SRARI_W4_SW(dst0_r, dst0_l, dst1_r, dst1_l,
-                CONST_BITS - PASS1_BITS + 1);
-    SRARI_W4_SW(dst2_r, dst2_l, dst3_r, dst3_l,
-                CONST_BITS - PASS1_BITS + 1);
+    /* Descale */
+    SRARI_W4_SW(dst0_r, dst0_l, dst1_r, dst1_l, CONST_BITS - PASS1_BITS + 1);
+    SRARI_W4_SW(dst2_r, dst2_l, dst3_r, dst3_l, CONST_BITS - PASS1_BITS + 1);
 
-    TRANSPOSE4x4_SW_SW(dst0_r, dst1_r, dst2_r, dst3_r, d0_r, d1_r, d2_r,
-                       d3_r);
+    TRANSPOSE4x4_SW_SW(dst0_r, dst1_r, dst2_r, dst3_r, d0_r, d1_r, d2_r, d3_r);
 
-    //Partial transpose!, one register ignored
+    /* Partial transpose!, one register ignored */
     ILVRL_W2_SH(dst1_l, dst0_l, val0, val1);
     ILVRL_W2_SH(dst3_l, dst2_l, val2, val3);
 
@@ -734,7 +725,7 @@ idct_4x4_msa (JCOEFPTR quantptr, JCOEFPTR block, JSAMPARRAY output_buf)
 
   /* Pass 2: process 4 rows from work array, store into output array. */
 
-  //Even Part
+  /* Even Part */
   d0_r = MSA_SLLI_W(d0_r, (CONST_BITS + 1));
 
   d2_r = d2_r * __msa_fill_w(FIX_1_847759065);
@@ -744,7 +735,7 @@ idct_4x4_msa (JCOEFPTR quantptr, JCOEFPTR block, JSAMPARRAY output_buf)
   tmp10_r = d0_r + d2_r;
   tmp12_r = d0_r - d2_r;
 
-  //Odd Part
+  /* Odd Part */
   tmp0_r = d7_r * __msa_fill_w(-FIX_0_211164243)
           + d5_r * __msa_fill_w(FIX_1_451774981)
           - d3_r * __msa_fill_w(FIX_2_172734803)
@@ -755,12 +746,10 @@ idct_4x4_msa (JCOEFPTR quantptr, JCOEFPTR block, JSAMPARRAY output_buf)
           + d3_r * __msa_fill_w(FIX_0_899976223)
           + d1_r * __msa_fill_w(FIX_2_562915447);
 
-  BUTTERFLY_4(tmp10_r, tmp12_r, tmp0_r, tmp2_r, dst0_r, dst1_r, dst2_r,
-              dst3_r);
+  BUTTERFLY_4(tmp10_r, tmp12_r, tmp0_r, tmp2_r, dst0_r, dst1_r, dst2_r, dst3_r);
 
-  //Descale
-  SRARI_W4_SW(dst0_r, dst1_r, dst2_r, dst3_r,
-              CONST_BITS + PASS1_BITS + 3 + 1);
+  /* Descale */
+  SRARI_W4_SW(dst0_r, dst1_r, dst2_r, dst3_r, CONST_BITS + PASS1_BITS + 3 + 1);
   TRANSPOSE4x4_SW_SW(dst0_r, dst1_r, dst2_r, dst3_r, dst0_r, dst1_r, dst2_r,
                      dst3_r);
   val0 = __msa_pckev_h((v8i16) dst1_r, (v8i16) dst0_r);
@@ -770,7 +759,7 @@ idct_4x4_msa (JCOEFPTR quantptr, JCOEFPTR block, JSAMPARRAY output_buf)
   CLIP_SH2_0_255(val0, val1);
   res = (v4i32) __msa_pckev_b((v16i8) val1, (v16i8) val0);
 
-  //Macro intentionally not used!
+  /* Macro intentionally not used! */
   out0 = __msa_copy_u_w(res, 0);
   out1 = __msa_copy_u_w(res, 1);
   out2 = __msa_copy_u_w(res, 2);
@@ -798,11 +787,11 @@ idct_2x2_msa (JCOEFPTR quantptr, JCOEFPTR block, JSAMPARRAY output_buf)
 
   /* Pass 1: process columns from input, store into work array. */
 
-  //Load coeff values
+  /* Load coeff values */
   val0 = LD_SH(block);
   LD_SH4(block + DCTSIZE, DCTSIZE * 2, val1, val3, val5, val7);
 
-  //Load quant value
+  /* Load quant value */
   quant0 = LD_SH(quantptr);
   res = val1 | val3 | val5 | val7;
 
@@ -819,26 +808,26 @@ idct_2x2_msa (JCOEFPTR quantptr, JCOEFPTR block, JSAMPARRAY output_buf)
     /* Note results are scaled up by sqrt(8) compared to a true IDCT; */
     /* furthermore, we scale the results by 2**PASS1_BITS. */
 
-    //Load remaining quant values
+    /* Load remaining quant values */
     LD_SH4(quantptr + DCTSIZE, 2 * DCTSIZE, quant1, quant3, quant5, quant7);
 
-    //Dequantize
+    /* Dequantize */
     val0 *= quant0;
-    MUL4(val1, quant1, val3, quant3, val5, quant5, val7, quant7, val1,
-         val3, val5, val7);
+    MUL4(val1, quant1, val3, quant3, val5, quant5, val7, quant7, val1, val3,
+         val5, val7);
 
-    //Even Part
+    /* Even Part */
     UNPCK_SH_SW(val0, d0_r, d0_l);
     d0_r = MSA_SLLI_W(d0_r, (CONST_BITS + 2));
     d0_l = MSA_SLLI_W(d0_l, (CONST_BITS + 2));
     tmp10_r = d0_r;
     tmp10_l = d0_l;
 
-    //Odd Part
-    UNPCK_SH_SW(val1, d1_r, d1_l);//z4
-    UNPCK_SH_SW(val3, d3_r, d3_l);//z3
-    UNPCK_SH_SW(val5, d5_r, d5_l);//z2
-    UNPCK_SH_SW(val7, d7_r, d7_l);//z1
+    /* Odd Part */
+    UNPCK_SH_SW(val1, d1_r, d1_l); /* z4 */
+    UNPCK_SH_SW(val3, d3_r, d3_l); /* z3 */
+    UNPCK_SH_SW(val5, d5_r, d5_l); /* z2 */
+    UNPCK_SH_SW(val7, d7_r, d7_l); /* z1 */
 
     tmp0_r = d7_r * __msa_fill_w(-FIX_0_720959822)
             + d5_r * __msa_fill_w(FIX_0_850430095)
@@ -852,18 +841,17 @@ idct_2x2_msa (JCOEFPTR quantptr, JCOEFPTR block, JSAMPARRAY output_buf)
     BUTTERFLY_4(tmp10_r, tmp10_l, tmp0_l, tmp0_r, dst0_r, dst0_l, dst1_l,
                 dst1_r);
 
-    //Descale
-    SRARI_W4_SW(dst0_r, dst0_l, dst1_r, dst1_l,
-                CONST_BITS - PASS1_BITS + 2);
+    /* Descale */
+    SRARI_W4_SW(dst0_r, dst0_l, dst1_r, dst1_l, CONST_BITS - PASS1_BITS + 2);
   }
 
-  //Get 0th row
+  /* Get 0th row */
   tmp10 = __msa_ilvr_w(dst1_r, dst0_r);
   tmp10 = MSA_SLLI_W(tmp10, (CONST_BITS + 2));
 
-  //Ignore 0 2 4 and 6th row
-  dst0_l = __msa_pckod_w(dst1_l, dst0_l);// 1 3 1 3
-  dst0_r = __msa_pckod_w(dst1_r, dst0_r);// 5 7 5 7
+  /* Ignore 0 2 4 and 6th row */
+  dst0_l = __msa_pckod_w(dst1_l, dst0_l); /* 1 3 1 3 */
+  dst0_r = __msa_pckod_w(dst1_r, dst0_r); /* 5 7 5 7 */
 
   dst0_l = (v4i32) __msa_dotp_s_d(dst0_l, const1);
   dst0_r = (v4i32) __msa_dotp_s_d(dst0_r, const0);
@@ -874,7 +862,7 @@ idct_2x2_msa (JCOEFPTR quantptr, JCOEFPTR block, JSAMPARRAY output_buf)
   dst0_r = tmp10 + tmp0;
   dst1_r = tmp10 - tmp0;
 
-  //Descale
+  /* Descale */
   SRARI_W2_SW(dst0_r, dst1_r, CONST_BITS + PASS1_BITS + 3 + 2);
 
   res = (v8i16) __msa_pckev_d((v2i64) dst1_r, (v2i64) dst0_r);

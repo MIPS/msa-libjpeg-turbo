@@ -50,6 +50,7 @@
 
 #define ST_B(RTYPE, in, pdst) *((RTYPE *)(pdst)) = (in)
 #define ST_H(RTYPE, in, pdst) *((RTYPE *)(pdst)) = (in)
+
 #if (__mips_isa_rev >= 6)
   #define SW(val, pdst) {                                 \
     unsigned char *pdst_sw_m = (unsigned char *) (pdst);  \
@@ -74,7 +75,6 @@
         : [val_m] "r" (val_m)                             \
     );                                                    \
   }
-
 
 #else  // !(__mips_isa_rev >= 6)
   #define SW(val, pdst) {                                 \
@@ -132,6 +132,7 @@
   LD_H4(RTYPE, (psrc) + 4 * stride, stride, out4, out5, out6, out7);  \
 }
 #define LD_SH8(...) LD_H8(v8i16, __VA_ARGS__)
+
 /* Description : Store vectors of 16 byte elements with stride
    Arguments   : Inputs - in0, in1, pdst, stride
    Details     : Store 16 byte elements from 'in0' to (pdst)
@@ -142,6 +143,7 @@
   ST_B(RTYPE, in1, (pdst) + stride);            \
 }
 #define ST_SB2(...) ST_B2(v16i8, __VA_ARGS__)
+
 /* Description : Store vectors of 8 halfword elements with stride
    Arguments   : Inputs - in0, in1, pdst, stride
    Details     : Store 8 halfword elements from 'in0' to (pdst)
@@ -367,6 +369,7 @@
   PCKEV_B2(RTYPE, in4, in5, in6, in7, out2, out3);               \
 }
 #define PCKEV_B4_UB(...) PCKEV_B4(v16u8, __VA_ARGS__)
+
 /* Description : Pack even halfword elements of vector pairs
    Arguments   : Inputs  - in0, in1, in2, in3
                  Outputs - out0, out1
@@ -413,6 +416,7 @@
   in3 = (RTYPE) MSA_SLLI_W(in3, shift_val);              \
 }
 #define SLLI_W4_SW(...) SLLI_W4(v4i32, __VA_ARGS__)
+
 /* Description : Arithmetic shift right all elements of half-word vector
    Arguments   : Inputs  - in0, in1, in2, in3, shift
                  Outputs - in place operation
@@ -444,6 +448,7 @@
   in3 = (RTYPE) MSA_SRAI_W(in3, shift_val);              \
 }
 #define SRAI_W4_SW(...) SRAI_W4(v4i32, __VA_ARGS__)
+
 /* Description : Shift right arithmetic rounded (immediate)
    Arguments   : Inputs  - in0, in1, shift
                  Outputs - in place operation
