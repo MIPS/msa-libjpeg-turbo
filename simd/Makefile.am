@@ -73,7 +73,7 @@ endif
 
 if SIMD_MSA
 
-libsimd_la_SOURCES = jsimd_msa.c jidct_msa.c
+libsimd_la_SOURCES = jsimd_msa.c jfdct_msa.c jidct_msa.c
 
 endif
 
