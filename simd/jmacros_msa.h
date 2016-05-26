@@ -28,7 +28,7 @@
 #include <msa.h>
 
 #ifdef CLANG_BUILD
-  #define MSA_ADDVI_B(a, b)  __msa_addvi_b((v4i32) a, b)
+  #define MSA_ADDVI_B(a, b)  __msa_addvi_b((v16i8) a, b)
   #define MSA_ADDVI_H(a, b)  __msa_addvi_h((v8i16) a, b)
   #define MSA_ADDVI_W(a, b)  __msa_addvi_w((v4i32) a, b)
   #define MSA_SLLI_H(a, b)   __msa_slli_h((v8i16) a, b)
