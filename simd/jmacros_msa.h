@@ -28,6 +28,7 @@
 #include <msa.h>
 
 #ifdef CLANG_BUILD
+  #define MSA_ADDVI_B(a, b)  __msa_addvi_b((v16i8) a, b)
   #define MSA_ADDVI_H(a, b)  __msa_addvi_h((v8i16) a, b)
   #define MSA_ADDVI_W(a, b)  __msa_addvi_w((v4i32) a, b)
   #define MSA_SLLI_H(a, b)   __msa_slli_h((v8i16) a, b)
@@ -35,6 +36,7 @@
   #define MSA_SRAI_H(a, b)   __msa_srai_h((v8i16) a, b)
   #define MSA_SRAI_W(a, b)   __msa_srai_w((v4i32) a, b)
 #else
+  #define MSA_ADDVI_B(a, b)  (a + b)
   #define MSA_ADDVI_H(a, b)  (a + b)
   #define MSA_ADDVI_W(a, b)  (a + b)
   #define MSA_SLLI_H(a, b)   (a << b)
@@ -195,6 +197,19 @@
   }
 #endif  // (__mips_isa_rev >= 6)
 
+/* Description : Load vectors with 16 byte elements with stride
+   Arguments   : Inputs  - psrc, stride
+                 Outputs - out0, out1
+                 Return Type - as per RTYPE
+   Details     : Load 16 byte elements in 'out0' from (psrc)
+                 Load 16 byte elements in 'out1' from (psrc + stride)
+*/
+#define LD_B2(RTYPE, psrc, stride, out0, out1) {  \
+  out0 = LD_B(RTYPE, (psrc));                     \
+  out1 = LD_B(RTYPE, (psrc) + stride);            \
+}
+#define LD_UB2(...) LD_B2(v16u8, __VA_ARGS__)
+
 /* Description : Load vectors with 8 halfword elements with stride
    Arguments   : Inputs  - psrc, stride
                  Outputs - out0, out1
@@ -300,6 +315,54 @@
   out1 = (RTYPE) __msa_vshf_b((v16i8) mask1, (v16i8) in3, (v16i8) in2);  \
 }
 #define VSHF_B2_SB(...) VSHF_B2(v16i8, __VA_ARGS__)
+#define VSHF_B2_SH(...) VSHF_B2(v8i16, __VA_ARGS__)
+
+/* Description : Dot product of halfword vector elements
+   Arguments   : Inputs  - mult0, mult1, cnst0, cnst1
+                 Outputs - out0, out1
+                 Return Type - as per RTYPE
+   Details     : Signed halfword elements from 'mult0' are multiplied with
+                 signed halfword elements from 'cnst0' producing a result
+                 twice the size of input i.e. signed word.
+                 The multiplication result of adjacent odd-even elements
+                 are added together and written to the 'out0' vector
+*/
+#define DOTP_SH2(RTYPE, mult0, mult1, cnst0, cnst1, out0, out1) {  \
+  out0 = (RTYPE) __msa_dotp_s_w((v8i16) mult0, (v8i16) cnst0);     \
+  out1 = (RTYPE) __msa_dotp_s_w((v8i16) mult1, (v8i16) cnst1);     \
+}
+#define DOTP_SH2_SW(...) DOTP_SH2(v4i32, __VA_ARGS__)
+
+#define DOTP_SH4(RTYPE, mult0, mult1, mult2, mult3,         \
+                 cnst0, cnst1, cnst2, cnst3,                \
+                 out0, out1, out2, out3) {                  \
+  DOTP_SH2(RTYPE, mult0, mult1, cnst0, cnst1, out0, out1);  \
+  DOTP_SH2(RTYPE, mult2, mult3, cnst2, cnst3, out2, out3);  \
+}
+#define DOTP_SH4_SW(...) DOTP_SH4(v4i32, __VA_ARGS__)
+
+/* Description : Dot product & addition of halfword vector elements
+   Arguments   : Inputs  - mult0, mult1, cnst0, cnst1
+                 Outputs - out0, out1
+                 Return Type - as per RTYPE
+   Details     : Signed halfword elements from 'mult0' are multiplied with
+                 signed halfword elements from 'cnst0' producing a result
+                 twice the size of input i.e. signed word.
+                 The multiplication result of adjacent odd-even elements
+                 are added to the 'out0' vector
+*/
+#define DPADD_SH2(RTYPE, mult0, mult1, cnst0, cnst1, out0, out1) {             \
+  out0 = (RTYPE) __msa_dpadd_s_w((v4i32) out0, (v8i16) mult0, (v8i16) cnst0);  \
+  out1 = (RTYPE) __msa_dpadd_s_w((v4i32) out1, (v8i16) mult1, (v8i16) cnst1);  \
+}
+#define DPADD_SH2_SW(...) DPADD_SH2(v4i32, __VA_ARGS__)
+
+#define DPADD_SH4(RTYPE, mult0, mult1, mult2, mult3,                     \
+                  cnst0, cnst1, cnst2, cnst3, out0, out1, out2, out3) {  \
+  DPADD_SH2(RTYPE, mult0, mult1, cnst0, cnst1, out0, out1);              \
+  DPADD_SH2(RTYPE, mult2, mult3, cnst2, cnst3, out2, out3);              \
+}
+#define DPADD_SH4_SW(...) DPADD_SH4(v4i32, __VA_ARGS__)
 
 /* Description : Clips all halfword elements of input vector between min & max
                  out = (in < min) ? min : ((in > max) ? max : in)
@@ -349,6 +412,19 @@
   out_m;                                                \
 } )
 
+/* Description : Interleave left half of byte elements from vectors
+   Arguments   : Inputs  - in0, in1, in2, in3
+                 Outputs - out0, out1
+                 Return Type - as per RTYPE
+   Details     : Left half of byte elements of 'in0' and 'in1' are interleaved
+                 and written to 'out0'.
+*/
+#define ILVL_B2(RTYPE, in0, in1, in2, in3, out0, out1) {  \
+  out0 = (RTYPE) __msa_ilvl_b((v16i8) in0, (v16i8) in1);  \
+  out1 = (RTYPE) __msa_ilvl_b((v16i8) in2, (v16i8) in3);  \
+}
+#define ILVL_B2_SH(...) ILVL_B2(v8i16, __VA_ARGS__)
+
 /* Description : Interleave left half of halfword elements from vectors
    Arguments   : Inputs  - in0, in1, in2, in3
                  Outputs - out0, out1
@@ -373,6 +449,8 @@
   out0 = (RTYPE) __msa_ilvr_b((v16i8) in0, (v16i8) in1);  \
   out1 = (RTYPE) __msa_ilvr_b((v16i8) in2, (v16i8) in3);  \
 }
+#define ILVR_B2_SH(...) ILVR_B2(v8i16, __VA_ARGS__)
+
 #define ILVR_B4(RTYPE, in0, in1, in2, in3, in4, in5, in6, in7,  \
                 out0, out1, out2, out3) {                       \
   ILVR_B2(RTYPE, in0, in1, in2, in3, out0, out1);               \
@@ -504,6 +582,7 @@
   out1 = (RTYPE) __msa_pckev_h((v8i16) in2, (v8i16) in3);  \
 }
 #define PCKEV_H2_SH(...) PCKEV_H2(v8i16, __VA_ARGS__)
+#define PCKEV_H2_SW(...) PCKEV_H2(v4i32, __VA_ARGS__)
 
 /* Description : Pack even double word elements of vector pairs
    Arguments   : Inputs  - in0, in1, in2, in3
@@ -522,6 +601,20 @@
   PCKEV_D2(RTYPE, in0, in1, in2, in3, out0, out1);               \
   PCKEV_D2(RTYPE, in4, in5, in6, in7, out2, out3);               \
 }
+
+/* Description : Pack odd half elements of vector pairs
+   Arguments   : Inputs  - in0, in1, in2, in3
+                 Outputs - out0, out1
+                 Return Type - as per RTYPE
+   Details     : Odd half elements of 'in0' are copied to the left half of
+                 'out0' & odd half elements of 'in1' are copied to the right
+                 half of 'out0'.
+*/
+#define PCKOD_H2(RTYPE, in0, in1, in2, in3, out0, out1) {  \
+  out0 = (RTYPE) __msa_pckod_h((v8i16) in0, (v8i16) in1);  \
+  out1 = (RTYPE) __msa_pckod_h((v8i16) in2, (v8i16) in3);  \
+}
+#define PCKOD_H2_SH(...) PCKOD_H2(v8i16, __VA_ARGS__)
 
 /* Description : Shift left all elements of word vector
    Arguments   : Inputs  - in0, in1, in2, in3, shift
