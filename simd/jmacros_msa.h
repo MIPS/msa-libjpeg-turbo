@@ -28,6 +28,7 @@
 #include <msa.h>
 
 #ifdef CLANG_BUILD
+  #define MSA_ADDVI_B(a, b)  __msa_addvi_b((v4i32) a, b)
   #define MSA_ADDVI_H(a, b)  __msa_addvi_h((v8i16) a, b)
   #define MSA_ADDVI_W(a, b)  __msa_addvi_w((v4i32) a, b)
   #define MSA_SLLI_H(a, b)   __msa_slli_h((v8i16) a, b)
@@ -35,6 +36,7 @@
   #define MSA_SRAI_H(a, b)   __msa_srai_h((v8i16) a, b)
   #define MSA_SRAI_W(a, b)   __msa_srai_w((v4i32) a, b)
 #else
+  #define MSA_ADDVI_B(a, b)  (a + b)
   #define MSA_ADDVI_H(a, b)  (a + b)
   #define MSA_ADDVI_W(a, b)  (a + b)
   #define MSA_SLLI_H(a, b)   (a << b)
