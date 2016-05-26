@@ -42,8 +42,8 @@ static inline unsigned char clip_pixel (int val)
 
 #define CALC_R4_FRM_YUV(y_w0, y_w1, y_w2, y_w3, cr_w0, cr_w1, cr_w2, cr_w3,  \
                         out_r0, out_r1, out_r2, out_r3) {                    \
-  v4i32 const_1_40200_m = { FIX_1_40200, FIX_1_40200, FIX_1_40200,           \
-                            FIX_1_40200 };                                   \
+  v4i32 const_1_40200_m = {FIX_1_40200, FIX_1_40200, FIX_1_40200,            \
+                           FIX_1_40200};                                     \
                                                                              \
   MUL4(const_1_40200_m, cr_w0, const_1_40200_m, cr_w1,                       \
        const_1_40200_m, cr_w2, const_1_40200_m, cr_w3,                       \
@@ -58,8 +58,8 @@ static inline unsigned char clip_pixel (int val)
 }
 
 #define CALC_R2_FRM_YUV(y_w0, y_w1, cr_w0, cr_w1, out_r0, out_r1)  {     \
-  v4i32 const_1_40200_m = { FIX_1_40200, FIX_1_40200, FIX_1_40200,       \
-                            FIX_1_40200 };                               \
+  v4i32 const_1_40200_m = {FIX_1_40200, FIX_1_40200, FIX_1_40200,        \
+                           FIX_1_40200};                                 \
                                                                          \
   MUL2(const_1_40200_m, cr_w0, const_1_40200_m, cr_w1, out_r0, out_r1);  \
   SRARI_W2_SW(out_r0, out_r1, 16);                                       \
@@ -71,10 +71,10 @@ static inline unsigned char clip_pixel (int val)
 #define CALC_G4_FRM_YUV(y_w0, y_w1, y_w2, y_w3, cb_w0, cb_w1, cb_w2, cb_w3,  \
                         cr_w0, cr_w1, cr_w2, cr_w3, out_g0, out_g1, out_g2,  \
                         out_g3) {                                            \
-  v4i32 const_0_34414_m = { FIX_0_34414, FIX_0_34414, FIX_0_34414,           \
-                            FIX_0_34414 };                                   \
-  v4i32 const_0_71414_m = { FIX_0_71414, FIX_0_71414, FIX_0_71414,           \
-                            FIX_0_71414 };                                   \
+  v4i32 const_0_34414_m = {FIX_0_34414, FIX_0_34414, FIX_0_34414,            \
+                           FIX_0_34414};                                     \
+  v4i32 const_0_71414_m = {FIX_0_71414, FIX_0_71414, FIX_0_71414,            \
+                           FIX_0_71414};                                     \
                                                                              \
   MUL4(const_0_34414_m, cb_w0, const_0_34414_m, cb_w1,                       \
        const_0_34414_m, cb_w2, const_0_34414_m, cb_w3,                       \
@@ -96,10 +96,10 @@ static inline unsigned char clip_pixel (int val)
 
 #define CALC_G2_FRM_YUV(y_w0, y_w1, cb_w0, cb_w1, cr_w0, cr_w1,         \
                         out_g0, out_g1)  {                              \
-  v4i32 const_0_34414_m = { FIX_0_34414, FIX_0_34414, FIX_0_34414,      \
-                            FIX_0_34414 };                              \
-  v4i32 const_0_71414_m = { FIX_0_71414, FIX_0_71414, FIX_0_71414,      \
-                            FIX_0_71414 };                              \
+  v4i32 const_0_34414_m = {FIX_0_34414, FIX_0_34414, FIX_0_34414,       \
+                           FIX_0_34414};                                \
+  v4i32 const_0_71414_m = {FIX_0_71414, FIX_0_71414, FIX_0_71414,       \
+                           FIX_0_71414};                                \
                                                                         \
   MUL2(const_0_34414_m, cb_w0, const_0_34414_m, cb_w1,out_g0, out_g1);  \
   SUB2(zero, out_g0, zero, out_g1, out_g0, out_g1);                     \
@@ -113,8 +113,8 @@ static inline unsigned char clip_pixel (int val)
 
 #define CALC_B4_FRM_YUV(y_w0, y_w1, y_w2, y_w3, cb_w0, cb_w1, cb_w2, cb_w3,  \
                         out_b0, out_b1, out_b2, out_b3) {                    \
-  v4i32 const_1_77200_m = { FIX_1_77200, FIX_1_77200, FIX_1_77200,           \
-                            FIX_1_77200 };                                   \
+  v4i32 const_1_77200_m = {FIX_1_77200, FIX_1_77200, FIX_1_77200,            \
+                           FIX_1_77200};                                     \
                                                                              \
   MUL4(const_1_77200_m, cb_w0, const_1_77200_m, cb_w1,                       \
        const_1_77200_m, cb_w2, const_1_77200_m, cb_w3,                       \
@@ -129,8 +129,8 @@ static inline unsigned char clip_pixel (int val)
 }
 
 #define CALC_B2_FRM_YUV(y_w0, y_w1, cb_w0, cb_w1, out_b0, out_b1) {      \
-  v4i32 const_1_77200_m = { FIX_1_77200, FIX_1_77200, FIX_1_77200,       \
-                            FIX_1_77200 };                               \
+  v4i32 const_1_77200_m = {FIX_1_77200, FIX_1_77200, FIX_1_77200,        \
+                           FIX_1_77200};                                 \
                                                                          \
   MUL2(const_1_77200_m, cb_w0, const_1_77200_m, cb_w1, out_b0, out_b1);  \
   SRARI_W2_SW(out_b0, out_b1, 16);                                       \
@@ -180,16 +180,15 @@ yuv_rgb_convert_msa (JSAMPROW p_in_y, JSAMPROW p_in_cb, JSAMPROW p_in_cr,
   unsigned int remaining_wd = out_width & 15;
   v16u8 mask_rg = {0, 16, 0, 4, 20, 0, 8, 24, 0, 12, 28, 0, 0, 0, 0, 0};
   v16u8 mask_rgb = {0, 1, 16, 3, 4, 20, 6, 7, 24, 9, 10, 28, 0, 0, 0, 0};
-  v16i8 const_128 = {128, 128, 128, 128, 128, 128, 128, 128,
-                     128, 128, 128, 128, 128, 128, 128, 128};
-  v16u8 out0, out1, out2, input_y = { 0 };
+  v16i8 const_128 = __msa_ldi_b(128);
+  v16u8 out0, out1, out2, input_y = {0};
   v16i8 input_cb, input_cr, out_rgb0, out_rgb1, out_rgb2, out_rgb3;
   v4i32 y_w0, y_w1, y_w2, y_w3, cb_w0, cb_w1, cb_w2, cb_w3;
   v4i32 cr_w0, cr_w1, cr_w2, cr_w3, out_r0, out_r1, out_r2, out_r3;
   v4i32 out_g0, out_g1, out_g2, out_g3, out_b0, out_b1, out_b2, out_b3;
-  v4i32 zero = { 0 };
+  v4i32 zero = {0};
 
-  for (col = 0; col < num_cols_mul_16; col++) {
+  for (col = num_cols_mul_16; col-- ;) {
     input_y = LD_UB(p_in_y);
     input_cb = LD_SB(p_in_cb);
     input_cr = LD_SB(p_in_cr);
@@ -240,9 +239,9 @@ yuv_rgb_convert_msa (JSAMPROW p_in_y, JSAMPROW p_in_cb, JSAMPROW p_in_cr,
     p_rgb += 16;
   }
 
-  if (remaining_wd > 8) {
+  if (remaining_wd >= 8) {
     uint64_t in_y, in_cb, in_cr;
-    v16i8 input_cbcr = { 0 };
+    v16i8 input_cbcr = {0};
 
     in_y = LD(p_in_y);
     in_cb = LD(p_in_cb);
@@ -309,16 +308,15 @@ yuv_bgr_convert_msa (JSAMPROW p_in_y, JSAMPROW p_in_cb, JSAMPROW p_in_cr,
   unsigned int remaining_wd = out_width & 15;
   v16u8 mask_bg = {0, 16, 0, 4, 20, 0, 8, 24, 0, 12, 28, 0, 0, 0, 0, 0};
   v16u8 mask_rgb = {0, 1, 16, 3, 4, 20, 6, 7, 24, 9, 10, 28, 0, 0, 0, 0};
-  v16i8 const_128 = {128, 128, 128, 128, 128, 128, 128, 128,
-                     128, 128, 128, 128, 128, 128, 128, 128};
-  v16u8 out0, out1, out2, input_y = { 0 };
+  v16i8 const_128 = __msa_ldi_b(128);
+  v16u8 out0, out1, out2, input_y = {0};
   v16i8 input_cb, input_cr, out_rgb0, out_rgb1, out_rgb2, out_rgb3;
   v4i32 y_w0, y_w1, y_w2, y_w3, cb_w0, cb_w1, cb_w2, cb_w3;
   v4i32 cr_w0, cr_w1, cr_w2, cr_w3, out_r0, out_r1, out_r2, out_r3;
   v4i32 out_g0, out_g1, out_g2, out_g3, out_b0, out_b1, out_b2, out_b3;
-  v4i32 zero = { 0 };
+  v4i32 zero = {0};
 
-  for (col = 0; col < num_cols_mul_16; col++) {
+  for (col = num_cols_mul_16; col-- ;) {
     input_y = LD_UB(p_in_y);
     input_cb = LD_SB(p_in_cb);
     input_cr = LD_SB(p_in_cr);
@@ -369,9 +367,9 @@ yuv_bgr_convert_msa (JSAMPROW p_in_y, JSAMPROW p_in_cb, JSAMPROW p_in_cr,
     p_rgb += 16;
   }
 
-  if (remaining_wd > 8) {
+  if (remaining_wd >= 8) {
     uint64_t in_y, in_cb, in_cr;
-    v16i8 input_cbcr = { 0 };
+    v16i8 input_cbcr = {0};
 
     in_y = LD(p_in_y);
     in_cb = LD(p_in_cb);
@@ -437,19 +435,17 @@ yuv_rgba_convert_msa (JSAMPROW p_in_y, JSAMPROW p_in_cb, JSAMPROW p_in_cr,
   unsigned int col, num_cols_mul_16 = out_width >> 4;
   unsigned int remaining_wd = out_width & 15;
   v16u8 mask = {0, 16, 4, 20, 8, 24, 12, 28, 0, 0, 0, 0, 0, 0, 0, 0};
-  v16i8 const_128 = {128, 128, 128, 128, 128, 128, 128, 128,
-                     128, 128, 128, 128, 128, 128, 128, 128};
-  v16i8 alpha = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-                 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-  v16u8 out0, out1, out2, out3, input_y = { 0 };
+  v16i8 const_128 = __msa_ldi_b(128);
+  v16i8 alpha = __msa_ldi_b(0xFF);
+  v16u8 out0, out1, out2, out3, input_y = {0};
   v16i8 input_cb, input_cr, out_rg0, out_rg1, out_rg2, out_rg3;
   v16i8 out_ba0, out_ba1, out_ba2, out_ba3;
   v4i32 y_w0, y_w1, y_w2, y_w3, cb_w0, cb_w1, cb_w2, cb_w3;
   v4i32 cr_w0, cr_w1, cr_w2, cr_w3, out_r0, out_r1, out_r2, out_r3;
   v4i32 out_g0, out_g1, out_g2, out_g3, out_b0, out_b1, out_b2, out_b3;
-  v4i32 zero = { 0 };
+  v4i32 zero = {0};
 
-  for (col = 0; col < num_cols_mul_16; col++) {
+  for (col = num_cols_mul_16; col-- ;) {
     input_y = LD_UB(p_in_y);
     input_cb = LD_SB(p_in_cb);
     input_cr = LD_SB(p_in_cr);
@@ -490,9 +486,9 @@ yuv_rgba_convert_msa (JSAMPROW p_in_y, JSAMPROW p_in_cb, JSAMPROW p_in_cr,
     p_rgb += 16 * 4;
   }
 
-  if (remaining_wd > 8) {
+  if (remaining_wd >= 8) {
     uint64_t in_y, in_cb, in_cr;
-    v16i8 input_cbcr = { 0 };
+    v16i8 input_cbcr = {0};
 
     in_y = LD(p_in_y);
     in_cb = LD(p_in_cb);
@@ -553,19 +549,17 @@ yuv_bgra_convert_msa (JSAMPROW p_in_y, JSAMPROW p_in_cb, JSAMPROW p_in_cr,
   unsigned int col, num_cols_mul_16 = out_width >> 4;
   unsigned int remaining_wd = out_width & 15;
   v16u8 mask = {0, 16, 4, 20, 8, 24, 12, 28, 0, 0, 0, 0, 0, 0, 0, 0};
-  v16i8 const_128 = {128, 128, 128, 128, 128, 128, 128, 128,
-                     128, 128, 128, 128, 128, 128, 128, 128};
-  v16i8 alpha = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-                 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-  v16u8 out0, out1, out2, out3, input_y = { 0 };
+  v16i8 const_128 = __msa_ldi_b(128);
+  v16i8 alpha = __msa_ldi_b(0xFF);
+  v16u8 out0, out1, out2, out3, input_y = {0};
   v16i8 input_cb, input_cr, out_bg0, out_bg1, out_bg2, out_bg3;
   v16i8 out_ra0, out_ra1, out_ra2, out_ra3;
   v4i32 y_w0, y_w1, y_w2, y_w3, cb_w0, cb_w1, cb_w2, cb_w3;
   v4i32 cr_w0, cr_w1, cr_w2, cr_w3, out_r0, out_r1, out_r2, out_r3;
   v4i32 out_g0, out_g1, out_g2, out_g3, out_b0, out_b1, out_b2, out_b3;
-  v4i32 zero = { 0 };
+  v4i32 zero = {0};
 
-  for (col = 0; col < num_cols_mul_16; col++) {
+  for (col = num_cols_mul_16; col-- ;) {
     input_y = LD_UB(p_in_y);
     input_cb = LD_SB(p_in_cb);
     input_cr = LD_SB(p_in_cr);
@@ -606,9 +600,9 @@ yuv_bgra_convert_msa (JSAMPROW p_in_y, JSAMPROW p_in_cb, JSAMPROW p_in_cr,
     p_rgb += 16 * 4;
   }
 
-  if (remaining_wd > 8) {
+  if (remaining_wd >= 8) {
     uint64_t in_y, in_cb, in_cr;
-    v16i8 input_cbcr = { 0 };
+    v16i8 input_cbcr = {0};
 
     in_y = LD(p_in_y);
     in_cb = LD(p_in_cb);
@@ -668,19 +662,17 @@ yuv_argb_convert_msa (JSAMPROW p_in_y, JSAMPROW p_in_cb, JSAMPROW p_in_cr,
   unsigned int col, num_cols_mul_16 = out_width >> 4;
   unsigned int remaining_wd = out_width & 15;
   v16u8 mask = {0, 16, 4, 20, 8, 24, 12, 28, 0, 0, 0, 0, 0, 0, 0, 0};
-  v16i8 const_128 = {128, 128, 128, 128, 128, 128, 128, 128,
-                     128, 128, 128, 128, 128, 128, 128, 128};
-  v16i8 alpha = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-                 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-  v16u8 out0, out1, out2, out3, input_y = { 0 };
+  v16i8 const_128 = __msa_ldi_b(128);
+  v16i8 alpha = __msa_ldi_b(0xFF);
+  v16u8 out0, out1, out2, out3, input_y = {0};
   v16i8 input_cb, input_cr, out_ar0, out_ar1, out_ar2, out_ar3;
   v16i8 out_gb0, out_gb1, out_gb2, out_gb3;
   v4i32 y_w0, y_w1, y_w2, y_w3, cb_w0, cb_w1, cb_w2, cb_w3;
   v4i32 cr_w0, cr_w1, cr_w2, cr_w3, out_r0, out_r1, out_r2, out_r3;
   v4i32 out_g0, out_g1, out_g2, out_g3, out_b0, out_b1, out_b2, out_b3;
-  v4i32 zero = { 0 };
+  v4i32 zero = {0};
 
-  for (col = 0; col < num_cols_mul_16; col++) {
+  for (col = num_cols_mul_16; col-- ;) {
     input_y = LD_UB(p_in_y);
     input_cb = LD_SB(p_in_cb);
     input_cr = LD_SB(p_in_cr);
@@ -721,9 +713,9 @@ yuv_argb_convert_msa (JSAMPROW p_in_y, JSAMPROW p_in_cb, JSAMPROW p_in_cr,
     p_rgb += 16 * 4;
   }
 
-  if (remaining_wd > 8) {
+  if (remaining_wd >= 8) {
     uint64_t in_y, in_cb, in_cr;
-    v16i8 input_cbcr = { 0 };
+    v16i8 input_cbcr = {0};
 
     in_y = LD(p_in_y);
     in_cb = LD(p_in_cb);
@@ -783,19 +775,17 @@ yuv_abgr_convert_msa (JSAMPROW p_in_y, JSAMPROW p_in_cb, JSAMPROW p_in_cr,
   unsigned int col, num_cols_mul_16 = out_width >> 4;
   unsigned int remaining_wd = out_width & 15;
   v16u8 mask = {0, 16, 4, 20, 8, 24, 12, 28, 0, 0, 0, 0, 0, 0, 0, 0};
-  v16i8 const_128 = {128, 128, 128, 128, 128, 128, 128, 128,
-                     128, 128, 128, 128, 128, 128, 128, 128};
-  v16i8 alpha = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-                 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-  v16u8 out0, out1, out2, out3, input_y = { 0 };
+  v16i8 const_128 = __msa_ldi_b(128);
+  v16i8 alpha = __msa_ldi_b(0xFF);
+  v16u8 out0, out1, out2, out3, input_y = {0};
   v16i8 input_cb, input_cr, out_ab0, out_ab1, out_ab2, out_ab3;
   v16i8 out_gr0, out_gr1, out_gr2, out_gr3;
   v4i32 y_w0, y_w1, y_w2, y_w3, cb_w0, cb_w1, cb_w2, cb_w3;
   v4i32 cr_w0, cr_w1, cr_w2, cr_w3, out_r0, out_r1, out_r2, out_r3;
   v4i32 out_g0, out_g1, out_g2, out_g3, out_b0, out_b1, out_b2, out_b3;
-  v4i32 zero = { 0 };
+  v4i32 zero = {0};
 
-  for (col = 0; col < num_cols_mul_16; col++) {
+  for (col = num_cols_mul_16; col-- ;) {
     input_y = LD_UB(p_in_y);
     input_cb = LD_SB(p_in_cb);
     input_cr = LD_SB(p_in_cr);
@@ -836,9 +826,9 @@ yuv_abgr_convert_msa (JSAMPROW p_in_y, JSAMPROW p_in_cb, JSAMPROW p_in_cr,
     p_rgb += 16 * 4;
   }
 
-  if (remaining_wd > 8) {
+  if (remaining_wd >= 8) {
     uint64_t in_y, in_cb, in_cr;
-    v16i8 input_cbcr = { 0 };
+    v16i8 input_cbcr = {0};
 
     in_y = LD(p_in_y);
     in_cb = LD(p_in_cb);
