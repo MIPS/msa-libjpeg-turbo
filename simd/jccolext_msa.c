@@ -52,9 +52,9 @@ rgb_yuv_convert_msa (JSAMPROW inptr, JSAMPROW p_out_y, JSAMPROW p_out_cb,
   LD_UB2(inptr, 16, in0, in1);
 
   for (col = 0; col < width_mul_16; col += 16) {
-    gb0_mask = __msa_addvi_b(rg0_mask, 1);
-    rg1_mask = __msa_addvi_b(rg0_mask, 8);
-    gb1_mask = __msa_addvi_b(gb0_mask, 8);
+    gb0_mask = MSA_ADDVI_B(rg0_mask, 1);
+    rg1_mask = MSA_ADDVI_B(rg0_mask, 8);
+    gb1_mask = MSA_ADDVI_B(gb0_mask, 8);
 
     in2 = LD_UB(inptr + 32);
 
@@ -115,7 +115,7 @@ rgb_yuv_convert_msa (JSAMPROW inptr, JSAMPROW p_out_y, JSAMPROW p_out_cb,
   }
 
   if ((width - width_mul_16) >= 8) {
-    gb0_mask = __msa_addvi_b(rg0_mask, 1);
+    gb0_mask = MSA_ADDVI_B(rg0_mask, 1);
 
     VSHF_B2_SH(in0, in1, in0, in1, rg0_mask, gb0_mask, rg0, gb0);
     r0 = (v8i16) __msa_pckev_b((v16i8) zero, (v16i8) rg0);
@@ -194,9 +194,9 @@ bgr_yuv_convert_msa (JSAMPROW inptr, JSAMPROW p_out_y, JSAMPROW p_out_cb,
   LD_UB2(inptr, 16, in0, in1);
 
   for (col = 0; col < width_mul_16; col += 16) {
-    gr0_mask = __msa_addvi_b(bg0_mask, 1);
-    bg1_mask = __msa_addvi_b(bg0_mask, 8);
-    gr1_mask = __msa_addvi_b(gr0_mask, 8);
+    gr0_mask = MSA_ADDVI_B(bg0_mask, 1);
+    bg1_mask = MSA_ADDVI_B(bg0_mask, 8);
+    gr1_mask = MSA_ADDVI_B(gr0_mask, 8);
 
     in2 = LD_UB(inptr + 32);
 
@@ -257,7 +257,7 @@ bgr_yuv_convert_msa (JSAMPROW inptr, JSAMPROW p_out_y, JSAMPROW p_out_cb,
   }
 
   if ((width - width_mul_16) >= 8) {
-    gr0_mask = __msa_addvi_b(bg0_mask, 1);
+    gr0_mask = MSA_ADDVI_B(bg0_mask, 1);
 
     VSHF_B2_SH(in0, in1, in0, in1, bg0_mask, gr0_mask, bg0, gr0);
     b0 = (v8i16) __msa_pckev_b((v16i8) zero, (v16i8) bg0);
