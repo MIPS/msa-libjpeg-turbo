@@ -87,6 +87,10 @@ jsimd_can_rgb_ycc (void)
     return 0;
   if ((RGB_PIXELSIZE != 3) && (RGB_PIXELSIZE != 4))
     return 0;
+
+  if (simd_support & JSIMD_MSA)
+    return 1;
+
   return 0;
 }
 
@@ -150,6 +154,39 @@ jsimd_rgb_ycc_convert (j_compress_ptr cinfo,
                        JSAMPARRAY input_buf, JSAMPIMAGE output_buf,
                        JDIMENSION output_row, int num_rows)
 {
+  void (*msafct)(JDIMENSION, JSAMPARRAY, JSAMPIMAGE, JDIMENSION, int);
+
+  switch(cinfo->in_color_space) {
+    case JCS_EXT_RGB:
+      msafct=jsimd_extrgb_ycc_convert_msa;
+      break;
+    case JCS_EXT_RGBX:
+    case JCS_EXT_RGBA:
+      msafct=jsimd_extrgbx_ycc_convert_msa;
+      break;
+    case JCS_EXT_BGR:
+      msafct=jsimd_extbgr_ycc_convert_msa;
+      break;
+    case JCS_EXT_BGRX:
+    case JCS_EXT_BGRA:
+      msafct=jsimd_extbgrx_ycc_convert_msa;
+      break;
+    case JCS_EXT_XBGR:
+    case JCS_EXT_ABGR:
+      msafct=jsimd_extxbgr_ycc_convert_msa;
+
+      break;
+    case JCS_EXT_XRGB:
+    case JCS_EXT_ARGB:
+      msafct=jsimd_extxrgb_ycc_convert_msa;
+      break;
+    default:
+      msafct=jsimd_extrgb_ycc_convert_msa;
+      break;
+  }
+
+  if (simd_support & JSIMD_MSA)
+    msafct(cinfo->image_width, input_buf, output_buf, output_row, num_rows);
 }
 
 GLOBAL(void)

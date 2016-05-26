@@ -74,7 +74,7 @@ endif
 if SIMD_MSA
 
 libsimd_la_SOURCES = jsimd_msa.c jfdct_msa.c jidct_msa.c jdsample_msa.c \
-	jdcolext_msa.c
+	jdcolext_msa.c jccolext_msa.c
 
 endif
 
