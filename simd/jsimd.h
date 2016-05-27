@@ -731,6 +731,9 @@ EXTERN(void) jsimd_convsamp_neon
 EXTERN(void) jsimd_convsamp_mips_dspr2
         (JSAMPARRAY sample_data, JDIMENSION start_col, DCTELEM *workspace);
 
+EXTERN(void) jsimd_convsamp_msa
+        (JSAMPARRAY sample_data, JDIMENSION start_col, DCTELEM *workspace);
+
 EXTERN(void) jsimd_convsamp_altivec
         (JSAMPARRAY sample_data, JDIMENSION start_col, DCTELEM *workspace);
 
@@ -792,6 +795,9 @@ EXTERN(void) jsimd_quantize_neon
         (JCOEFPTR coef_block, DCTELEM *divisors, DCTELEM *workspace);
 
 EXTERN(void) jsimd_quantize_mips_dspr2
+        (JCOEFPTR coef_block, DCTELEM *divisors, DCTELEM *workspace);
+
+EXTERN(void) jsimd_quantize_msa
         (JCOEFPTR coef_block, DCTELEM *divisors, DCTELEM *workspace);
 
 EXTERN(void) jsimd_quantize_altivec

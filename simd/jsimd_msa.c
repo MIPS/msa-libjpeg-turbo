@@ -486,6 +486,9 @@ jsimd_can_convsamp (void)
   if (sizeof(DCTELEM) != 2)
     return 0;
 
+  if (simd_support & JSIMD_MSA)
+    return 1;
+
   return 0;
 }
 
@@ -513,6 +516,8 @@ GLOBAL(void)
 jsimd_convsamp (JSAMPARRAY sample_data, JDIMENSION start_col,
                 DCTELEM *workspace)
 {
+  if (simd_support & JSIMD_MSA)
+    jsimd_convsamp_msa(sample_data, start_col, workspace);
 }
 
 GLOBAL(void)
@@ -593,6 +598,9 @@ jsimd_can_quantize (void)
   if (sizeof(DCTELEM) != 2)
     return 0;
 
+  if (simd_support & JSIMD_MSA)
+    return 1;
+
   return 0;
 }
 
@@ -620,6 +628,8 @@ GLOBAL(void)
 jsimd_quantize (JCOEFPTR coef_block, DCTELEM *divisors,
                 DCTELEM *workspace)
 {
+  if (simd_support & JSIMD_MSA)
+    jsimd_quantize_msa(coef_block, divisors, workspace);
 }
 
 GLOBAL(void)
