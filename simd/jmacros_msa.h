@@ -273,6 +273,8 @@
   ST_H2(RTYPE, in0, in1, (pdst), stride);                 \
   ST_H2(RTYPE, in2, in3, (pdst) + 2 * stride, stride);    \
 }
+#define ST_SH4(...) ST_H4(v8i16, __VA_ARGS__)
+
 #define ST_H8(RTYPE, in0, in1, in2, in3, in4, in5, in6, in7, pdst, stride) {  \
   ST_H4(RTYPE, in0, in1, in2, in3, (pdst), stride);                           \
   ST_H4(RTYPE, in4, in5, in6, in7, (pdst) + 4 * stride, stride);              \
@@ -412,6 +414,24 @@
   out_m;                                                \
 } )
 
+/* Description : Horizontal subtraction of unsigned byte vector elements
+   Arguments   : Inputs  - in0, in1
+                 Outputs - out0, out1
+                 Return Type - as per RTYPE
+   Details     : Each unsigned odd byte element from 'in0' is subtracted from
+                 even unsigned byte element from 'in0' (pairwise) and the
+                 halfword result is written to 'out0'
+*/
+#define HSUB_UB2(RTYPE, in0, in1, out0, out1) {             \
+  out0 = (RTYPE) __msa_hsub_u_h((v16u8) in0, (v16u8) in0);  \
+  out1 = (RTYPE) __msa_hsub_u_h((v16u8) in1, (v16u8) in1);  \
+}
+#define HSUB_UB4(RTYPE, in0, in1, in2, in3, out0, out1, out2, out3) {  \
+  HSUB_UB2(RTYPE, in0, in1, out0, out1);                               \
+  HSUB_UB2(RTYPE, in2, in3, out2, out3);                               \
+}
+#define HSUB_UB4_SH(...) HSUB_UB4(v8i16, __VA_ARGS__)
+
 /* Description : Interleave left half of byte elements from vectors
    Arguments   : Inputs  - in0, in1, in2, in3
                  Outputs - out0, out1
@@ -456,6 +476,7 @@
   ILVR_B2(RTYPE, in0, in1, in2, in3, out0, out1);               \
   ILVR_B2(RTYPE, in4, in5, in6, in7, out2, out3);               \
 }
+#define ILVR_B4_UB(...) ILVR_B4(v16u8, __VA_ARGS__)
 #define ILVR_B4_SB(...) ILVR_B4(v16i8, __VA_ARGS__)
 
 /* Description : Interleave right half of halfword elements from vectors
@@ -699,6 +720,24 @@
   MUL2(in0, in1, in2, in3, out0, out1);               \
   MUL2(in4, in5, in6, in7, out2, out3);               \
 }
+
+/* Description : XOR of 2 pairs of vectors
+   Arguments   : Inputs  - in0, in1, in2, in3
+                 Outputs - out0, out1
+   Return Type - as per RTYPE
+   Details     : Each element in 'in0' is xor'ed with 'in1' and result is
+                 written to 'out0'.
+*/
+#define XOR_V2(RTYPE, in0, in1, in2, in3, out0, out1) {  \
+  out0 = (RTYPE)((v16u8) in0 ^ (v16u8) in1);             \
+  out1 = (RTYPE)((v16u8) in2 ^ (v16u8) in3);             \
+}
+#define XOR_V4(RTYPE, in0, in1, in2, in3, in4, in5, in6, in7,  \
+               out0, out1, out2, out3) {                       \
+  XOR_V2(RTYPE, in0, in1, in2, in3, out0, out1);               \
+  XOR_V2(RTYPE, in4, in5, in6, in7, out2, out3);               \
+}
+#define XOR_V4_SH(...) XOR_V4(v8i16, __VA_ARGS__);
 
 /* Description : Addition of 2 pairs of vectors
    Arguments   : Inputs  - in0, in1, in2, in3
