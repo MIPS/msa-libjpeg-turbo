@@ -316,6 +316,7 @@
   out0 = (RTYPE) __msa_vshf_b((v16i8) mask0, (v16i8) in1, (v16i8) in0);  \
   out1 = (RTYPE) __msa_vshf_b((v16i8) mask1, (v16i8) in3, (v16i8) in2);  \
 }
+#define VSHF_B2_UB(...) VSHF_B2(v16u8, __VA_ARGS__)
 #define VSHF_B2_SB(...) VSHF_B2(v16i8, __VA_ARGS__)
 #define VSHF_B2_SH(...) VSHF_B2(v8i16, __VA_ARGS__)
 
@@ -518,6 +519,7 @@
   out0 = (RTYPE) __msa_ilvr_h((v8i16) in0, (v8i16) in1);  \
   out1 = (RTYPE) __msa_ilvl_h((v8i16) in0, (v8i16) in1);  \
 }
+#define ILVRL_H2_UB(...) ILVRL_H2(v16u8, __VA_ARGS__)
 #define ILVRL_H2_SH(...) ILVRL_H2(v8i16, __VA_ARGS__)
 #define ILVRL_H2_SW(...) ILVRL_H2(v4i32, __VA_ARGS__)
 
