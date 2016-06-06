@@ -32,6 +32,7 @@
 #define FIX_0_34414  0x581a
 #define FIX_0_71414  0xb6d2
 #define FIX_1_77200  0x1c5a2
+#define FIX_0_28586  (65536 - FIX_0_71414)
 
 #define ROUND_POWER_OF_TWO(value, n)  (((value) + (1 << ((n) - 1))) >> (n))
 
@@ -40,135 +41,112 @@ static inline unsigned char clip_pixel (int val)
     return ((val & ~0xFF) ? ((-val) >> 31) & 0xFF : val);
 }
 
-#define CALC_R4_FRM_YUV(y_w0, y_w1, y_w2, y_w3, cr_w0, cr_w1, cr_w2, cr_w3,  \
-                        out_r0, out_r1, out_r2, out_r3) {                    \
-  v4i32 const_1_40200_m = {FIX_1_40200, FIX_1_40200, FIX_1_40200,            \
-                           FIX_1_40200};                                     \
-                                                                             \
-  MUL4(const_1_40200_m, cr_w0, const_1_40200_m, cr_w1,                       \
-       const_1_40200_m, cr_w2, const_1_40200_m, cr_w3,                       \
-       out_r0, out_r1, out_r2, out_r3);                                      \
-  SRARI_W4_SW(out_r0, out_r1, out_r2, out_r3, 16);                           \
-  ADD4(y_w0, out_r0, y_w1, out_r1, y_w2, out_r2, y_w3, out_r3,               \
-       out_r0, out_r1, out_r2, out_r3);                                      \
-  out_r0 = CLIP_SW_0_255(out_r0);                                            \
-  out_r1 = CLIP_SW_0_255(out_r1);                                            \
-  out_r2 = CLIP_SW_0_255(out_r2);                                            \
-  out_r3 = CLIP_SW_0_255(out_r3);                                            \
+/* Original
+    G = Y - 0.34414 * Cb - 0.71414 * Cr */
+/* This implementation
+    G = Y - 0.34414 * Cb + 0.28586 * Cr - Cr */
+
+#define CALC_G4_FRM_YUV(y_h0, y_h1, cb_h0, cb_h1, cr_h0, cr_h1, out_g0) {  \
+  v8i16 tmp0_m, tmp1_m;                                                    \
+  v4i32 out0_m, out1_m, out2_m, out3_m;                                    \
+  v8i16 const0_m = {-FIX_0_34414, FIX_0_28586, -FIX_0_34414,               \
+                    FIX_0_28586, -FIX_0_34414, FIX_0_28586,                \
+                    -FIX_0_34414, FIX_0_28586};                            \
+                                                                           \
+  ILVRL_H2_SH(cr_h0, cb_h0, tmp0_m, tmp1_m);                               \
+  UNPCK_SH_SW((-cr_h0), out0_m, out1_m);                                   \
+  out0_m <<= 16;                                                           \
+  out1_m <<= 16;                                                           \
+  DPADD_SH2_SW(tmp0_m, tmp1_m, const0_m, const0_m, out0_m, out1_m);        \
+  ILVRL_H2_SH(cr_h1, cb_h1, tmp0_m, tmp1_m);                               \
+  UNPCK_SH_SW((-cr_h1), out2_m, out3_m);                                   \
+  out2_m <<= 16;                                                           \
+  out3_m <<= 16;                                                           \
+  DPADD_SH2_SW(tmp0_m, tmp1_m, const0_m, const0_m, out2_m, out3_m);        \
+  SRARI_W4_SW(out0_m, out1_m, out2_m, out3_m, 16);                         \
+  PCKEV_H2_SH(out1_m, out0_m, out3_m, out2_m, tmp0_m, tmp1_m);             \
+  ADD2(y_h0, tmp0_m, y_h1, tmp1_m, tmp0_m, tmp1_m);                        \
+  CLIP_SH2_0_255(tmp0_m, tmp1_m);                                          \
+  out_g0 = __msa_pckev_b((v16i8) tmp1_m, (v16i8) tmp0_m);                  \
 }
 
-#define CALC_R2_FRM_YUV(y_w0, y_w1, cr_w0, cr_w1, out_r0, out_r1)  {     \
+#define CALC_G2_FRM_YUV(y_h0, cb_h0, cr_h0, out_g0) {                \
+  v8i16 tmp0_m, tmp1_m;                                              \
+  v4i32 out0_m, out1_m;                                              \
+  v8i16 const0_m = {-FIX_0_34414, FIX_0_28586, -FIX_0_34414,         \
+                    FIX_0_28586, -FIX_0_34414, FIX_0_28586,          \
+                    -FIX_0_34414, FIX_0_28586};                      \
+                                                                     \
+  ILVRL_H2_SH(cr_h0, cb_h0, tmp0_m, tmp1_m);                         \
+  UNPCK_SH_SW((-cr_h0), out0_m, out1_m);                             \
+  out0_m <<= 16;                                                     \
+  out1_m <<= 16;                                                     \
+  DPADD_SH2_SW(tmp0_m, tmp1_m, const0_m, const0_m, out0_m, out1_m);  \
+  SRARI_W2_SW(out0_m, out1_m, 16);                                   \
+  tmp0_m = __msa_pckev_h((v8i16) out1_m, (v8i16) out0_m);            \
+  tmp0_m += y_h0;                                                    \
+  tmp0_m = CLIP_SH_0_255(tmp0_m);                                    \
+  out_g0 = __msa_pckev_b((v16i8) tmp0_m, (v16i8) tmp0_m);            \
+}
+
+#define CALC_R4_FRM_YUV(y_h0, y_h1, cr_w0, cr_w1, cr_w2, cr_w3, out_r0) {  \
+  v8i16 tmp0_m, tmp1_m;                                                    \
+  v4i32 out0_m, out1_m, out2_m, out3_m;                                    \
+  v4i32 const_1_40200_m = {FIX_1_40200, FIX_1_40200, FIX_1_40200,          \
+                           FIX_1_40200};                                   \
+                                                                           \
+  MUL4(const_1_40200_m, cr_w0, const_1_40200_m, cr_w1,                     \
+       const_1_40200_m, cr_w2, const_1_40200_m, cr_w3,                     \
+       out0_m, out1_m, out2_m, out3_m);                                    \
+  SRARI_W4_SW(out0_m, out1_m, out2_m, out3_m, 16);                         \
+  PCKEV_H2_SH(out1_m, out0_m, out3_m, out2_m, tmp0_m, tmp1_m);             \
+  ADD2(y_h0, tmp0_m, y_h1, tmp1_m, tmp0_m, tmp1_m);                        \
+  CLIP_SH2_0_255(tmp0_m, tmp1_m);                                          \
+  out_r0 = __msa_pckev_b((v16i8) tmp1_m, (v16i8) tmp0_m);                  \
+}
+
+#define CALC_R2_FRM_YUV(y_h0, cr_w0, cr_w1, out_r0) {                    \
+  v8i16 tmp0_m;                                                          \
+  v4i32 out0_m, out1_m;                                                  \
   v4i32 const_1_40200_m = {FIX_1_40200, FIX_1_40200, FIX_1_40200,        \
                            FIX_1_40200};                                 \
                                                                          \
-  MUL2(const_1_40200_m, cr_w0, const_1_40200_m, cr_w1, out_r0, out_r1);  \
-  SRARI_W2_SW(out_r0, out_r1, 16);                                       \
-  ADD2(y_w0, out_r0, y_w1, out_r1, out_r0, out_r1);                      \
-  out_r0 = CLIP_SW_0_255(out_r0);                                        \
-  out_r1 = CLIP_SW_0_255(out_r1);                                        \
+  MUL2(const_1_40200_m, cr_w0, const_1_40200_m, cr_w1, out0_m, out1_m);  \
+  SRARI_W2_SW(out0_m, out1_m, 16);                                       \
+  tmp0_m = __msa_pckev_h((v8i16) out1_m, (v8i16) out0_m);                \
+  tmp0_m += y_h0;                                                        \
+  tmp0_m = CLIP_SH_0_255(tmp0_m);                                        \
+  out_r0 = __msa_pckev_b((v16i8) tmp0_m, (v16i8) tmp0_m);                \
 }
 
-#define CALC_G4_FRM_YUV(y_w0, y_w1, y_w2, y_w3, cb_w0, cb_w1, cb_w2, cb_w3,  \
-                        cr_w0, cr_w1, cr_w2, cr_w3, out_g0, out_g1, out_g2,  \
-                        out_g3) {                                            \
-  v4i32 const_0_34414_m = {FIX_0_34414, FIX_0_34414, FIX_0_34414,            \
-                           FIX_0_34414};                                     \
-  v4i32 const_0_71414_m = {FIX_0_71414, FIX_0_71414, FIX_0_71414,            \
-                           FIX_0_71414};                                     \
-                                                                             \
-  MUL4(const_0_34414_m, cb_w0, const_0_34414_m, cb_w1,                       \
-       const_0_34414_m, cb_w2, const_0_34414_m, cb_w3,                       \
-       out_g0, out_g1, out_g2, out_g3);                                      \
-  SUB4(zero, out_g0, zero, out_g1, zero, out_g2, zero, out_g3,               \
-       out_g0, out_g1, out_g2, out_g3);                                      \
-  out_g0 -= (const_0_71414_m * cr_w0);                                       \
-  out_g1 -= (const_0_71414_m * cr_w1);                                       \
-  out_g2 -= (const_0_71414_m * cr_w2);                                       \
-  out_g3 -= (const_0_71414_m * cr_w3);                                       \
-  SRARI_W4_SW(out_g0, out_g1, out_g2, out_g3, 16);                           \
-  ADD4(y_w0, out_g0, y_w1, out_g1, y_w2, out_g2, y_w3, out_g3,               \
-       out_g0, out_g1, out_g2, out_g3);                                      \
-  out_g0 = CLIP_SW_0_255(out_g0);                                            \
-  out_g1 = CLIP_SW_0_255(out_g1);                                            \
-  out_g2 = CLIP_SW_0_255(out_g2);                                            \
-  out_g3 = CLIP_SW_0_255(out_g3);                                            \
+#define CALC_B4_FRM_YUV(y_h0, y_h1, cb_w0, cb_w1, cb_w2, cb_w3, out_b0) {  \
+  v8i16 tmp0_m, tmp1_m;                                                    \
+  v4i32 out0_m, out1_m, out2_m, out3_m;                                    \
+  v4i32 const_1_77200_m = {FIX_1_77200, FIX_1_77200, FIX_1_77200,          \
+                           FIX_1_77200};                                   \
+                                                                           \
+  MUL4(const_1_77200_m, cb_w0, const_1_77200_m, cb_w1,                     \
+       const_1_77200_m, cb_w2, const_1_77200_m, cb_w3,                     \
+       out0_m, out1_m, out2_m, out3_m);                                    \
+  SRARI_W4_SW(out0_m, out1_m, out2_m, out3_m, 16);                         \
+  PCKEV_H2_SH(out1_m, out0_m, out3_m, out2_m, tmp0_m, tmp1_m);             \
+  ADD2(y_h0, tmp0_m, y_h1, tmp1_m, tmp0_m, tmp1_m);                        \
+  CLIP_SH2_0_255(tmp0_m, tmp1_m);                                          \
+  out_b0 = __msa_pckev_b((v16i8) tmp1_m, (v16i8) tmp0_m);                  \
 }
 
-#define CALC_G2_FRM_YUV(y_w0, y_w1, cb_w0, cb_w1, cr_w0, cr_w1,         \
-                        out_g0, out_g1)  {                              \
-  v4i32 const_0_34414_m = {FIX_0_34414, FIX_0_34414, FIX_0_34414,       \
-                           FIX_0_34414};                                \
-  v4i32 const_0_71414_m = {FIX_0_71414, FIX_0_71414, FIX_0_71414,       \
-                           FIX_0_71414};                                \
-                                                                        \
-  MUL2(const_0_34414_m, cb_w0, const_0_34414_m, cb_w1,out_g0, out_g1);  \
-  SUB2(zero, out_g0, zero, out_g1, out_g0, out_g1);                     \
-  out_g0 -= (const_0_71414_m * cr_w0);                                  \
-  out_g1 -= (const_0_71414_m * cr_w1);                                  \
-  SRARI_W2_SW(out_g0, out_g1, 16);                                      \
-  ADD2(y_w0, out_g0, y_w1, out_g1, out_g0, out_g1);                     \
-  out_g0 = CLIP_SW_0_255(out_g0);                                       \
-  out_g1 = CLIP_SW_0_255(out_g1);                                       \
-}
-
-#define CALC_B4_FRM_YUV(y_w0, y_w1, y_w2, y_w3, cb_w0, cb_w1, cb_w2, cb_w3,  \
-                        out_b0, out_b1, out_b2, out_b3) {                    \
-  v4i32 const_1_77200_m = {FIX_1_77200, FIX_1_77200, FIX_1_77200,            \
-                           FIX_1_77200};                                     \
-                                                                             \
-  MUL4(const_1_77200_m, cb_w0, const_1_77200_m, cb_w1,                       \
-       const_1_77200_m, cb_w2, const_1_77200_m, cb_w3,                       \
-       out_b0, out_b1, out_b2, out_b3);                                      \
-  SRARI_W4_SW(out_b0, out_b1, out_b2, out_b3, 16);                           \
-  ADD4(y_w0, out_b0, y_w1, out_b1, y_w2, out_b2, y_w3, out_b3,               \
-       out_b0, out_b1, out_b2, out_b3);                                      \
-  out_b0 = CLIP_SW_0_255(out_b0);                                            \
-  out_b1 = CLIP_SW_0_255(out_b1);                                            \
-  out_b2 = CLIP_SW_0_255(out_b2);                                            \
-  out_b3 = CLIP_SW_0_255(out_b3);                                            \
-}
-
-#define CALC_B2_FRM_YUV(y_w0, y_w1, cb_w0, cb_w1, out_b0, out_b1) {      \
+#define CALC_B2_FRM_YUV(y_h0, cb_w0, cb_w1, out_b0) {                    \
+  v8i16 tmp0_m;                                                          \
+  v4i32 out0_m, out1_m;                                                  \
   v4i32 const_1_77200_m = {FIX_1_77200, FIX_1_77200, FIX_1_77200,        \
                            FIX_1_77200};                                 \
                                                                          \
-  MUL2(const_1_77200_m, cb_w0, const_1_77200_m, cb_w1, out_b0, out_b1);  \
-  SRARI_W2_SW(out_b0, out_b1, 16);                                       \
-  ADD2(y_w0, out_b0, y_w1, out_b1, out_b0, out_b1);                      \
-  out_b0 = CLIP_SW_0_255(out_b0);                                        \
-  out_b1 = CLIP_SW_0_255(out_b1);                                        \
-}
-
-#define UNPCK_SB_TO_SW_YCBCR(input_y, input_cb, input_cr,                   \
-                             out_y_w0, out_y_w1, out_y_w2, out_y_w3,        \
-                             out_cb_w0, out_cb_w1, out_cb_w2, out_cb_w3,    \
-                             out_cr_w0, out_cr_w1, out_cr_w2, out_cr_w3) {  \
-  v8i16 y_hr_m, y_hl_m, cb_hr_m, cb_hl_m, cr_hr_m, cr_hl_m;                 \
-                                                                            \
-  UNPCK_UB_SH(input_y, y_hr_m, y_hl_m);                                     \
-  UNPCK_SB_SH(input_cb, cb_hr_m, cb_hl_m);                                  \
-  UNPCK_SB_SH(input_cr, cr_hr_m, cr_hl_m);                                  \
-                                                                            \
-  UNPCK_SH_SW(y_hr_m, out_y_w0, out_y_w1);                                  \
-  UNPCK_SH_SW(y_hl_m, out_y_w2, out_y_w3);                                  \
-                                                                            \
-  UNPCK_SH_SW(cb_hr_m, out_cb_w0, out_cb_w1);                               \
-  UNPCK_SH_SW(cb_hl_m, out_cb_w2, out_cb_w3);                               \
-                                                                            \
-  UNPCK_SH_SW(cr_hr_m, out_cr_w0, out_cr_w1);                               \
-  UNPCK_SH_SW(cr_hl_m, out_cr_w2, out_cr_w3);                               \
-}
-
-#define UNPCK_R_SB_TO_SW_YCBCR(input_y, input_cbcr, out_y_w0, out_y_w1,       \
-                               out_cb_w0, out_cb_w1, out_cr_w0, out_cr_w1) {  \
-  v8i16 y_hr_m, cb_hr_m, cr_hr_m;                                             \
-                                                                              \
-  y_hr_m = (v8i16) __msa_ilvr_b((v16i8) zero, (v16i8) input_y);               \
-  UNPCK_SB_SH(input_cbcr, cb_hr_m, cr_hr_m);                                  \
-                                                                              \
-  UNPCK_SH_SW(y_hr_m, out_y_w0, out_y_w1);                                    \
-  UNPCK_SH_SW(cb_hr_m, out_cb_w0, out_cb_w1);                                 \
-  UNPCK_SH_SW(cr_hr_m, out_cr_w0, out_cr_w1);                                 \
+  MUL2(const_1_77200_m, cb_w0, const_1_77200_m, cb_w1, out0_m, out1_m);  \
+  SRARI_W2_SW(out0_m, out1_m, 16);                                       \
+  tmp0_m = __msa_pckev_h((v8i16) out1_m, (v8i16) out0_m);                \
+  tmp0_m += y_h0;                                                        \
+  tmp0_m = CLIP_SH_0_255(tmp0_m);                                        \
+  out_b0 = __msa_pckev_b((v16i8) tmp0_m, (v16i8) tmp0_m);                \
 }
 
 void
@@ -177,18 +155,17 @@ yuv_rgb_convert_msa (JSAMPROW p_in_y, JSAMPROW p_in_cb, JSAMPROW p_in_cr,
 {
   int y, cb, cr;
   unsigned int col, num_cols_mul_16 = out_width >> 4;
-  unsigned int remaining_wd = out_width & 15;
-  v16u8 mask_rg = {0, 16, 0, 4, 20, 0, 8, 24, 0, 12, 28, 0, 0, 0, 0, 0};
-  v16u8 mask_rgb = {0, 1, 16, 3, 4, 20, 6, 7, 24, 9, 10, 28, 0, 0, 0, 0};
-  v16i8 const_128 = __msa_ldi_b(128);
-  v16u8 out0, out1, out2, input_y = {0};
-  v16i8 input_cb, input_cr, out_rgb0, out_rgb1, out_rgb2, out_rgb3;
-  v4i32 y_w0, y_w1, y_w2, y_w3, cb_w0, cb_w1, cb_w2, cb_w3;
-  v4i32 cr_w0, cr_w1, cr_w2, cr_w3, out_r0, out_r1, out_r2, out_r3;
-  v4i32 out_g0, out_g1, out_g2, out_g3, out_b0, out_b1, out_b2, out_b3;
-  v4i32 zero = {0};
+  unsigned int remaining_wd = out_width & 0xF;
+  v16u8 mask_rgb0 = {0, 1, 16, 2, 3, 17, 4, 5, 18, 6, 7, 19, 8, 9, 20, 10};
+  v16u8 mask_rgb1 = {11, 21, 12, 13, 22, 14, 15, 23, 0, 1, 24, 2, 3, 25, 4, 5};
+  v16u8 mask_rgb2 = {26, 6, 7, 27, 8, 9, 28, 10, 11, 29, 12, 13, 30, 14, 15, 31};
+  v16u8 tmp0, tmp1, out0, out1, out2, input_y = {0};
+  v16i8 input_cb, input_cr, out_rgb0, out_rgb1, const_128 = __msa_ldi_b(128);
+  v8i16 y_h0, y_h1, cb_h0, cb_h1, cr_h0, cr_h1;
+  v4i32 cb_w0, cb_w1, cb_w2, cb_w3, cr_w0, cr_w1, cr_w2, cr_w3, zero = {0};
+  v16i8  out_r0, out_g0, out_b0;
 
-  for (col = num_cols_mul_16; col-- ;) {
+  for (col = num_cols_mul_16; col--;) {
     input_y = LD_UB(p_in_y);
     input_cb = LD_SB(p_in_cb);
     input_cr = LD_SB(p_in_cr);
@@ -200,36 +177,28 @@ yuv_rgb_convert_msa (JSAMPROW p_in_y, JSAMPROW p_in_cb, JSAMPROW p_in_cr,
     input_cb -= const_128;
     input_cr -= const_128;
 
-    UNPCK_SB_TO_SW_YCBCR(input_y, input_cb, input_cr, y_w0, y_w1, y_w2,
-                         y_w3, cb_w0, cb_w1, cb_w2, cb_w3, cr_w0, cr_w1,
-                         cr_w2, cr_w3);
+    UNPCK_UB_SH(input_y, y_h0, y_h1);
+    UNPCK_SB_SH(input_cb, cb_h0, cb_h1);
+    UNPCK_SB_SH(input_cr, cr_h0, cr_h1);
 
-    CALC_R4_FRM_YUV(y_w0, y_w1, y_w2, y_w3, cr_w0, cr_w1, cr_w2, cr_w3,
-                    out_r0, out_r1, out_r2, out_r3);
+    CALC_G4_FRM_YUV(y_h0, y_h1, cb_h0, cb_h1, cr_h0, cr_h1, out_g0);
 
-    CALC_G4_FRM_YUV(y_w0, y_w1, y_w2, y_w3, cb_w0, cb_w1, cb_w2, cb_w3,
-                    cr_w0, cr_w1, cr_w2, cr_w3, out_g0, out_g1, out_g2,
-                    out_g3);
+    UNPCK_SH_SW(cr_h0, cr_w0, cr_w1);
+    UNPCK_SH_SW(cr_h1, cr_w2, cr_w3);
+    CALC_R4_FRM_YUV(y_h0, y_h1, cr_w0, cr_w1, cr_w2, cr_w3, out_r0);
 
-    VSHF_B2_SB(out_r0, out_g0, out_r1, out_g1, mask_rg, mask_rg, out_rgb0,
-               out_rgb1);
-    VSHF_B2_SB(out_r2, out_g2, out_r3, out_g3, mask_rg, mask_rg, out_rgb2,
-               out_rgb3);
+    UNPCK_SH_SW(cb_h0, cb_w0, cb_w1);
+    UNPCK_SH_SW(cb_h1, cb_w2, cb_w3);
+    CALC_B4_FRM_YUV(y_h0, y_h1, cb_w0, cb_w1, cb_w2, cb_w3, out_b0);
 
-    CALC_B4_FRM_YUV(y_w0, y_w1, y_w2, y_w3, cb_w0, cb_w1, cb_w2, cb_w3,
-                    out_b0, out_b1, out_b2, out_b3);
+    ILVRL_B2_SB(out_g0, out_r0, out_rgb0, out_rgb1);
 
-    VSHF_B2_SB(out_rgb0, out_b0, out_rgb1, out_b1, mask_rgb, mask_rgb,
-               out_rgb0, out_rgb1);
-    VSHF_B2_SB(out_rgb2, out_b2, out_rgb3, out_b3, mask_rgb, mask_rgb,
-               out_rgb2, out_rgb3);
-
-    out_rgb0 = __msa_sldi_b(out_rgb0, (v16i8) zero, 12);
-    out0 = (v16u8) __msa_sldi_b((v16i8) out_rgb1, (v16i8) out_rgb0, 4);
-    out_rgb1 = __msa_sldi_b(out_rgb1, (v16i8) zero, 12);
-    out1 = (v16u8) __msa_sldi_b((v16i8) out_rgb2, (v16i8) out_rgb1, 8);
-    out_rgb2 = __msa_sldi_b(out_rgb2, (v16i8) zero, 12);
-    out2 = (v16u8) __msa_sldi_b((v16i8) out_rgb3, (v16i8) out_rgb2, 12);
+    VSHF_B2_UB(out_rgb0, out_b0, out_rgb0, out_b0, mask_rgb0, mask_rgb1,
+               out0, tmp0);
+    VSHF_B2_UB(out_rgb1, out_b0, out_rgb1, out_b0, mask_rgb1, mask_rgb2,
+               tmp1, out2);
+    out1 = (v16u8) __msa_sldi_b((v16i8) zero, (v16i8) tmp1, 8);
+    out1 = (v16u8) __msa_pckev_d((v2i64) out1, (v2i64) tmp0);
 
     ST_UB(out0, p_rgb);
     p_rgb += 16;
@@ -257,25 +226,18 @@ yuv_rgb_convert_msa (JSAMPROW p_in_y, JSAMPROW p_in_cb, JSAMPROW p_in_cr,
 
     input_cbcr -= const_128;
 
-    UNPCK_R_SB_TO_SW_YCBCR(input_y, input_cbcr, y_w0, y_w1, cb_w0, cb_w1,
-                           cr_w0, cr_w1);
+    y_h0 = (v8i16) __msa_ilvr_b((v16i8) zero, (v16i8) input_y);
+    UNPCK_SB_SH(input_cbcr, cb_h0, cr_h0);
+    UNPCK_SH_SW(cb_h0, cb_w0, cb_w1);
+    UNPCK_SH_SW(cr_h0, cr_w0, cr_w1);
 
-    CALC_R2_FRM_YUV(y_w0, y_w1, cr_w0, cr_w1, out_r0, out_r1);
+    CALC_R2_FRM_YUV(y_h0, cr_w0, cr_w1, out_r0);
+    CALC_G2_FRM_YUV(y_h0, cb_h0, cr_h0, out_g0);
+    CALC_B2_FRM_YUV(y_h0, cb_w0, cb_w1, out_b0);
 
-    CALC_G2_FRM_YUV(y_w0, y_w1, cb_w0, cb_w1, cr_w0, cr_w1, out_g0, out_g1);
-
-    VSHF_B2_SB(out_r0, out_g0, out_r1, out_g1, mask_rg, mask_rg, out_rgb0,
-               out_rgb1);
-
-    CALC_B2_FRM_YUV(y_w0, y_w1, cb_w0, cb_w1, out_b0, out_b1);
-
-    VSHF_B2_SB(out_rgb0, out_b0, out_rgb1, out_b1, mask_rgb, mask_rgb,
-               out_rgb0, out_rgb1);
-
-    out_rgb0 = __msa_sldi_b(out_rgb0, (v16i8) zero, 12);
-    out0 = (v16u8) __msa_sldi_b((v16i8) out_rgb1, (v16i8) out_rgb0, 4);
-    out_rgb1 = __msa_sldi_b(out_rgb1, (v16i8) zero, 12);
-    out1 = (v16u8) __msa_sldi_b((v16i8) zero, (v16i8) out_rgb1, 8);
+    out_rgb0 = (v16i8) __msa_ilvr_b((v16i8) out_g0, (v16i8) out_r0);
+    VSHF_B2_UB(out_rgb0, out_b0, out_rgb0, out_b0, mask_rgb0, mask_rgb1,
+               out0, out1);
 
     ST_UB(out0, p_rgb);
     p_rgb += 16;
@@ -303,20 +265,19 @@ void
 yuv_bgr_convert_msa (JSAMPROW p_in_y, JSAMPROW p_in_cb, JSAMPROW p_in_cr,
                      JSAMPROW p_rgb, JDIMENSION out_width)
 {
-  int y, cb, cr;
-  unsigned int col, num_cols_mul_16 = out_width >> 4;
-  unsigned int remaining_wd = out_width & 15;
-  v16u8 mask_bg = {0, 16, 0, 4, 20, 0, 8, 24, 0, 12, 28, 0, 0, 0, 0, 0};
-  v16u8 mask_rgb = {0, 1, 16, 3, 4, 20, 6, 7, 24, 9, 10, 28, 0, 0, 0, 0};
-  v16i8 const_128 = __msa_ldi_b(128);
-  v16u8 out0, out1, out2, input_y = {0};
-  v16i8 input_cb, input_cr, out_rgb0, out_rgb1, out_rgb2, out_rgb3;
-  v4i32 y_w0, y_w1, y_w2, y_w3, cb_w0, cb_w1, cb_w2, cb_w3;
-  v4i32 cr_w0, cr_w1, cr_w2, cr_w3, out_r0, out_r1, out_r2, out_r3;
-  v4i32 out_g0, out_g1, out_g2, out_g3, out_b0, out_b1, out_b2, out_b3;
-  v4i32 zero = {0};
+  int32_t y, cb, cr;
+  uint32_t col, num_cols_mul_16 = out_width >> 4;
+  uint32_t remaining_wd = out_width & 0xF;
+  v16u8 mask_rgb0 = {0, 1, 16, 2, 3, 17, 4, 5, 18, 6, 7, 19, 8, 9, 20, 10};
+  v16u8 mask_rgb1 = {11, 21, 12, 13, 22, 14, 15, 23, 0, 1, 24, 2, 3, 25, 4, 5};
+  v16u8 mask_rgb2 = {26, 6, 7, 27, 8, 9, 28, 10, 11, 29, 12, 13, 30, 14, 15, 31};
+  v16u8 tmp0, tmp1, out0, out1, out2, input_y = {0};
+  v16i8 input_cb, input_cr, out_rgb0, out_rgb1, const_128 = __msa_ldi_b(128);
+  v8i16 y_h0, y_h1, cb_h0, cb_h1, cr_h0, cr_h1;
+  v4i32 cb_w0, cb_w1, cb_w2, cb_w3, cr_w0, cr_w1, cr_w2, cr_w3, zero = {0};
+  v16i8  out_r0, out_g0, out_b0;
 
-  for (col = num_cols_mul_16; col-- ;) {
+  for (col = num_cols_mul_16; col--;) {
     input_y = LD_UB(p_in_y);
     input_cb = LD_SB(p_in_cb);
     input_cr = LD_SB(p_in_cr);
@@ -328,36 +289,28 @@ yuv_bgr_convert_msa (JSAMPROW p_in_y, JSAMPROW p_in_cb, JSAMPROW p_in_cr,
     input_cb -= const_128;
     input_cr -= const_128;
 
-    UNPCK_SB_TO_SW_YCBCR(input_y, input_cb, input_cr, y_w0, y_w1, y_w2,
-                         y_w3, cb_w0, cb_w1, cb_w2, cb_w3, cr_w0, cr_w1,
-                         cr_w2, cr_w3);
+    UNPCK_UB_SH(input_y, y_h0, y_h1);
+    UNPCK_SB_SH(input_cb, cb_h0, cb_h1);
+    UNPCK_SB_SH(input_cr, cr_h0, cr_h1);
 
-    CALC_B4_FRM_YUV(y_w0, y_w1, y_w2, y_w3, cb_w0, cb_w1, cb_w2, cb_w3,
-                    out_b0, out_b1, out_b2, out_b3);
+    CALC_G4_FRM_YUV(y_h0, y_h1, cb_h0, cb_h1, cr_h0, cr_h1, out_g0);
 
-    CALC_G4_FRM_YUV(y_w0, y_w1, y_w2, y_w3, cb_w0, cb_w1, cb_w2, cb_w3,
-                    cr_w0, cr_w1, cr_w2, cr_w3, out_g0, out_g1, out_g2,
-                    out_g3);
+    UNPCK_SH_SW(cr_h0, cr_w0, cr_w1);
+    UNPCK_SH_SW(cr_h1, cr_w2, cr_w3);
+    CALC_R4_FRM_YUV(y_h0, y_h1, cr_w0, cr_w1, cr_w2, cr_w3, out_r0);
 
-    VSHF_B2_SB(out_b0, out_g0, out_b1, out_g1, mask_bg, mask_bg, out_rgb0,
-               out_rgb1);
-    VSHF_B2_SB(out_b2, out_g2, out_b3, out_g3, mask_bg, mask_bg, out_rgb2,
-               out_rgb3);
+    UNPCK_SH_SW(cb_h0, cb_w0, cb_w1);
+    UNPCK_SH_SW(cb_h1, cb_w2, cb_w3);
+    CALC_B4_FRM_YUV(y_h0, y_h1, cb_w0, cb_w1, cb_w2, cb_w3, out_b0);
 
-    CALC_R4_FRM_YUV(y_w0, y_w1, y_w2, y_w3, cr_w0, cr_w1, cr_w2, cr_w3,
-                    out_r0, out_r1, out_r2, out_r3);
+    ILVRL_B2_SB(out_g0, out_b0, out_rgb0, out_rgb1);
 
-    VSHF_B2_SB(out_rgb0, out_r0, out_rgb1, out_r1, mask_rgb, mask_rgb,
-               out_rgb0, out_rgb1);
-    VSHF_B2_SB(out_rgb2, out_r2, out_rgb3, out_r3, mask_rgb, mask_rgb,
-               out_rgb2, out_rgb3);
-
-    out_rgb0 = __msa_sldi_b(out_rgb0, (v16i8) zero, 12);
-    out0 = (v16u8) __msa_sldi_b((v16i8) out_rgb1, (v16i8) out_rgb0, 4);
-    out_rgb1 = __msa_sldi_b(out_rgb1, (v16i8) zero, 12);
-    out1 = (v16u8) __msa_sldi_b((v16i8) out_rgb2, (v16i8) out_rgb1, 8);
-    out_rgb2 = __msa_sldi_b(out_rgb2, (v16i8) zero, 12);
-    out2 = (v16u8) __msa_sldi_b((v16i8) out_rgb3, (v16i8) out_rgb2, 12);
+    VSHF_B2_UB(out_rgb0, out_r0, out_rgb0, out_r0, mask_rgb0, mask_rgb1,
+               out0, tmp0);
+    VSHF_B2_UB(out_rgb1, out_r0, out_rgb1, out_r0, mask_rgb1, mask_rgb2,
+               tmp1, out2);
+    out1 = (v16u8) __msa_sldi_b((v16i8) zero, (v16i8) tmp1, 8);
+    out1 = (v16u8) __msa_pckev_d((v2i64) out1, (v2i64) tmp0);
 
     ST_UB(out0, p_rgb);
     p_rgb += 16;
@@ -385,25 +338,18 @@ yuv_bgr_convert_msa (JSAMPROW p_in_y, JSAMPROW p_in_cb, JSAMPROW p_in_cr,
 
     input_cbcr -= const_128;
 
-    UNPCK_R_SB_TO_SW_YCBCR(input_y, input_cbcr, y_w0, y_w1, cb_w0, cb_w1,
-                           cr_w0, cr_w1);
+    y_h0 = (v8i16) __msa_ilvr_b((v16i8) zero, (v16i8) input_y);
+    UNPCK_SB_SH(input_cbcr, cb_h0, cr_h0);
+    UNPCK_SH_SW(cb_h0, cb_w0, cb_w1);
+    UNPCK_SH_SW(cr_h0, cr_w0, cr_w1);
 
-    CALC_B2_FRM_YUV(y_w0, y_w1, cb_w0, cb_w1, out_b0, out_b1);
+    CALC_R2_FRM_YUV(y_h0, cr_w0, cr_w1, out_r0);
+    CALC_G2_FRM_YUV(y_h0, cb_h0, cr_h0, out_g0);
+    CALC_B2_FRM_YUV(y_h0, cb_w0, cb_w1, out_b0);
 
-    CALC_G2_FRM_YUV(y_w0, y_w1, cb_w0, cb_w1, cr_w0, cr_w1, out_g0, out_g1);
-
-    VSHF_B2_SB(out_b0, out_g0, out_b1, out_g1, mask_bg, mask_bg, out_rgb0,
-               out_rgb1);
-
-    CALC_R2_FRM_YUV(y_w0, y_w1, cr_w0, cr_w1, out_r0, out_r1);
-
-    VSHF_B2_SB(out_rgb0, out_r0, out_rgb1, out_r1, mask_rgb, mask_rgb,
-               out_rgb0, out_rgb1);
-
-    out_rgb0 = __msa_sldi_b(out_rgb0, (v16i8) zero, 12);
-    out0 = (v16u8) __msa_sldi_b((v16i8) out_rgb1, (v16i8) out_rgb0, 4);
-    out_rgb1 = __msa_sldi_b(out_rgb1, (v16i8) zero, 12);
-    out1 = (v16u8) __msa_sldi_b((v16i8) zero, (v16i8) out_rgb1, 8);
+    out_rgb0 = (v16i8) __msa_ilvr_b((v16i8) out_g0, (v16i8) out_b0);
+    VSHF_B2_UB(out_rgb0, out_r0, out_rgb0, out_r0, mask_rgb0, mask_rgb1,
+               out0, out1);
 
     ST_UB(out0, p_rgb);
     p_rgb += 16;
@@ -433,19 +379,16 @@ yuv_rgba_convert_msa (JSAMPROW p_in_y, JSAMPROW p_in_cb, JSAMPROW p_in_cr,
 {
   int y, cb, cr;
   unsigned int col, num_cols_mul_16 = out_width >> 4;
-  unsigned int remaining_wd = out_width & 15;
-  v16u8 mask = {0, 16, 4, 20, 8, 24, 12, 28, 0, 0, 0, 0, 0, 0, 0, 0};
-  v16i8 const_128 = __msa_ldi_b(128);
+  unsigned int remaining_wd = out_width & 0xF;
   v16i8 alpha = __msa_ldi_b(0xFF);
+  v16i8 const_128 = __msa_ldi_b(128);
   v16u8 out0, out1, out2, out3, input_y = {0};
-  v16i8 input_cb, input_cr, out_rg0, out_rg1, out_rg2, out_rg3;
-  v16i8 out_ba0, out_ba1, out_ba2, out_ba3;
-  v4i32 y_w0, y_w1, y_w2, y_w3, cb_w0, cb_w1, cb_w2, cb_w3;
-  v4i32 cr_w0, cr_w1, cr_w2, cr_w3, out_r0, out_r1, out_r2, out_r3;
-  v4i32 out_g0, out_g1, out_g2, out_g3, out_b0, out_b1, out_b2, out_b3;
-  v4i32 zero = {0};
+  v16i8 input_cb, input_cr, out_rgb0, out_rgb1, out_ba0, out_ba1;
+  v8i16 y_h0, y_h1, cb_h0, cb_h1, cr_h0, cr_h1;
+  v4i32 cb_w0, cb_w1, cb_w2, cb_w3, cr_w0, cr_w1, cr_w2, cr_w3, zero = {0};
+  v16i8  out_r0, out_g0, out_b0;
 
-  for (col = num_cols_mul_16; col-- ;) {
+  for (col = num_cols_mul_16; col--;) {
     input_y = LD_UB(p_in_y);
     input_cb = LD_SB(p_in_cb);
     input_cr = LD_SB(p_in_cr);
@@ -457,30 +400,25 @@ yuv_rgba_convert_msa (JSAMPROW p_in_y, JSAMPROW p_in_cb, JSAMPROW p_in_cr,
     input_cb -= const_128;
     input_cr -= const_128;
 
-    UNPCK_SB_TO_SW_YCBCR(input_y, input_cb, input_cr, y_w0, y_w1, y_w2,
-                         y_w3, cb_w0, cb_w1, cb_w2, cb_w3, cr_w0, cr_w1,
-                         cr_w2, cr_w3);
+    UNPCK_UB_SH(input_y, y_h0, y_h1);
+    UNPCK_SB_SH(input_cb, cb_h0, cb_h1);
+    UNPCK_SB_SH(input_cr, cr_h0, cr_h1);
 
-    CALC_R4_FRM_YUV(y_w0, y_w1, y_w2, y_w3, cr_w0, cr_w1, cr_w2, cr_w3,
-                    out_r0, out_r1, out_r2, out_r3);
+    CALC_G4_FRM_YUV(y_h0, y_h1, cb_h0, cb_h1, cr_h0, cr_h1, out_g0);
 
-    CALC_G4_FRM_YUV(y_w0, y_w1, y_w2, y_w3, cb_w0, cb_w1, cb_w2, cb_w3,
-                    cr_w0, cr_w1, cr_w2, cr_w3, out_g0, out_g1, out_g2,
-                    out_g3);
+    UNPCK_SH_SW(cr_h0, cr_w0, cr_w1);
+    UNPCK_SH_SW(cr_h1, cr_w2, cr_w3);
+    CALC_R4_FRM_YUV(y_h0, y_h1, cr_w0, cr_w1, cr_w2, cr_w3, out_r0);
 
-    VSHF_B2_SB(out_r0, out_g0, out_r1, out_g1, mask, mask, out_rg0,
-               out_rg1);
-    VSHF_B2_SB(out_r2, out_g2, out_r3, out_g3, mask, mask, out_rg2,
-               out_rg3);
+    UNPCK_SH_SW(cb_h0, cb_w0, cb_w1);
+    UNPCK_SH_SW(cb_h1, cb_w2, cb_w3);
+    CALC_B4_FRM_YUV(y_h0, y_h1, cb_w0, cb_w1, cb_w2, cb_w3, out_b0);
 
-    CALC_B4_FRM_YUV(y_w0, y_w1, y_w2, y_w3, cb_w0, cb_w1, cb_w2, cb_w3,
-                    out_b0, out_b1, out_b2, out_b3);
+    ILVRL_B2_SB(out_g0, out_r0, out_rgb0, out_rgb1);
+    ILVRL_B2_SB(alpha, out_b0, out_ba0, out_ba1);
 
-    VSHF_B2_SB(out_b0, alpha, out_b1, alpha, mask, mask, out_ba0, out_ba1);
-    VSHF_B2_SB(out_b2, alpha, out_b3, alpha, mask, mask, out_ba2, out_ba3);
-
-    ILVR_H4_UB(out_ba0, out_rg0, out_ba1, out_rg1, out_ba2, out_rg2,
-               out_ba3, out_rg3, out0, out1, out2, out3);
+    ILVRL_H2_UB(out_ba0, out_rgb0, out0, out1);
+    ILVRL_H2_UB(out_ba1, out_rgb1, out2, out3);
 
     ST_UB4(out0, out1, out2, out3, p_rgb, 16);
     p_rgb += 16 * 4;
@@ -504,21 +442,18 @@ yuv_rgba_convert_msa (JSAMPROW p_in_y, JSAMPROW p_in_cb, JSAMPROW p_in_cr,
 
     input_cbcr -= const_128;
 
-    UNPCK_R_SB_TO_SW_YCBCR(input_y, input_cbcr, y_w0, y_w1, cb_w0, cb_w1,
-                           cr_w0, cr_w1);
+    y_h0 = (v8i16) __msa_ilvr_b((v16i8) zero, (v16i8) input_y);
+    UNPCK_SB_SH(input_cbcr, cb_h0, cr_h0);
+    UNPCK_SH_SW(cb_h0, cb_w0, cb_w1);
+    UNPCK_SH_SW(cr_h0, cr_w0, cr_w1);
 
-    CALC_R2_FRM_YUV(y_w0, y_w1, cr_w0, cr_w1, out_r0, out_r1);
+    CALC_R2_FRM_YUV(y_h0, cr_w0, cr_w1, out_r0);
+    CALC_G2_FRM_YUV(y_h0, cb_h0, cr_h0, out_g0);
+    CALC_B2_FRM_YUV(y_h0, cb_w0, cb_w1, out_b0);
 
-    CALC_G2_FRM_YUV(y_w0, y_w1, cb_w0, cb_w1, cr_w0, cr_w1, out_g0, out_g1);
-
-    VSHF_B2_SB(out_r0, out_g0, out_r1, out_g1, mask, mask, out_rg0,
-               out_rg1);
-
-    CALC_B2_FRM_YUV(y_w0, y_w1, cb_w0, cb_w1, out_b0, out_b1);
-
-    VSHF_B2_SB(out_b0, alpha, out_b1, alpha, mask, mask, out_ba0, out_ba1);
-
-    ILVR_H2_UB(out_ba0, out_rg0, out_ba1, out_rg1, out0, out1);
+    out_rgb0 = (v16i8) __msa_ilvr_b((v16i8) out_g0, (v16i8) out_r0);
+    out_ba0 = (v16i8) __msa_ilvr_b(alpha, (v16i8) out_b0);
+    ILVRL_H2_UB(out_ba0, out_rgb0, out0, out1);
 
     ST_UB2(out0, out1, p_rgb, 16);
     p_rgb += 16 * 2;
@@ -547,19 +482,16 @@ yuv_bgra_convert_msa (JSAMPROW p_in_y, JSAMPROW p_in_cb, JSAMPROW p_in_cr,
 {
   int y, cb, cr;
   unsigned int col, num_cols_mul_16 = out_width >> 4;
-  unsigned int remaining_wd = out_width & 15;
-  v16u8 mask = {0, 16, 4, 20, 8, 24, 12, 28, 0, 0, 0, 0, 0, 0, 0, 0};
-  v16i8 const_128 = __msa_ldi_b(128);
+  unsigned int remaining_wd = out_width & 0xF;
   v16i8 alpha = __msa_ldi_b(0xFF);
+  v16i8 const_128 = __msa_ldi_b(128);
   v16u8 out0, out1, out2, out3, input_y = {0};
-  v16i8 input_cb, input_cr, out_bg0, out_bg1, out_bg2, out_bg3;
-  v16i8 out_ra0, out_ra1, out_ra2, out_ra3;
-  v4i32 y_w0, y_w1, y_w2, y_w3, cb_w0, cb_w1, cb_w2, cb_w3;
-  v4i32 cr_w0, cr_w1, cr_w2, cr_w3, out_r0, out_r1, out_r2, out_r3;
-  v4i32 out_g0, out_g1, out_g2, out_g3, out_b0, out_b1, out_b2, out_b3;
-  v4i32 zero = {0};
+  v16i8 input_cb, input_cr, out_rgb0, out_rgb1, out_ra0, out_ra1;
+  v8i16 y_h0, y_h1, cb_h0, cb_h1, cr_h0, cr_h1;
+  v4i32 cb_w0, cb_w1, cb_w2, cb_w3, cr_w0, cr_w1, cr_w2, cr_w3, zero = {0};
+  v16i8  out_r0, out_g0, out_b0;
 
-  for (col = num_cols_mul_16; col-- ;) {
+  for (col = num_cols_mul_16; col--;) {
     input_y = LD_UB(p_in_y);
     input_cb = LD_SB(p_in_cb);
     input_cr = LD_SB(p_in_cr);
@@ -571,30 +503,25 @@ yuv_bgra_convert_msa (JSAMPROW p_in_y, JSAMPROW p_in_cb, JSAMPROW p_in_cr,
     input_cb -= const_128;
     input_cr -= const_128;
 
-    UNPCK_SB_TO_SW_YCBCR(input_y, input_cb, input_cr, y_w0, y_w1, y_w2,
-                         y_w3, cb_w0, cb_w1, cb_w2, cb_w3, cr_w0, cr_w1,
-                         cr_w2, cr_w3);
+    UNPCK_UB_SH(input_y, y_h0, y_h1);
+    UNPCK_SB_SH(input_cb, cb_h0, cb_h1);
+    UNPCK_SB_SH(input_cr, cr_h0, cr_h1);
 
-    CALC_B4_FRM_YUV(y_w0, y_w1, y_w2, y_w3, cb_w0, cb_w1, cb_w2, cb_w3,
-                    out_b0, out_b1, out_b2, out_b3);
+    CALC_G4_FRM_YUV(y_h0, y_h1, cb_h0, cb_h1, cr_h0, cr_h1, out_g0);
 
-    CALC_G4_FRM_YUV(y_w0, y_w1, y_w2, y_w3, cb_w0, cb_w1, cb_w2, cb_w3,
-                    cr_w0, cr_w1, cr_w2, cr_w3, out_g0, out_g1, out_g2,
-                    out_g3);
+    UNPCK_SH_SW(cr_h0, cr_w0, cr_w1);
+    UNPCK_SH_SW(cr_h1, cr_w2, cr_w3);
+    CALC_R4_FRM_YUV(y_h0, y_h1, cr_w0, cr_w1, cr_w2, cr_w3, out_r0);
 
-    VSHF_B2_SB(out_b0, out_g0, out_b1, out_g1, mask, mask, out_bg0,
-               out_bg1);
-    VSHF_B2_SB(out_b2, out_g2, out_b3, out_g3, mask, mask, out_bg2,
-               out_bg3);
+    UNPCK_SH_SW(cb_h0, cb_w0, cb_w1);
+    UNPCK_SH_SW(cb_h1, cb_w2, cb_w3);
+    CALC_B4_FRM_YUV(y_h0, y_h1, cb_w0, cb_w1, cb_w2, cb_w3, out_b0);
 
-    CALC_R4_FRM_YUV(y_w0, y_w1, y_w2, y_w3, cr_w0, cr_w1, cr_w2, cr_w3,
-                    out_r0, out_r1, out_r2, out_r3);
+    ILVRL_B2_SB(out_g0, out_b0, out_rgb0, out_rgb1);
+    ILVRL_B2_SB(alpha, out_r0, out_ra0, out_ra1);
 
-    VSHF_B2_SB(out_r0, alpha, out_r1, alpha, mask, mask, out_ra0, out_ra1);
-    VSHF_B2_SB(out_r2, alpha, out_r3, alpha, mask, mask, out_ra2, out_ra3);
-
-    ILVR_H4_UB(out_ra0, out_bg0, out_ra1, out_bg1, out_ra2, out_bg2,
-               out_ra3, out_bg3, out0, out1, out2, out3);
+    ILVRL_H2_UB(out_ra0, out_rgb0, out0, out1);
+    ILVRL_H2_UB(out_ra1, out_rgb1, out2, out3);
 
     ST_UB4(out0, out1, out2, out3, p_rgb, 16);
     p_rgb += 16 * 4;
@@ -618,21 +545,18 @@ yuv_bgra_convert_msa (JSAMPROW p_in_y, JSAMPROW p_in_cb, JSAMPROW p_in_cr,
 
     input_cbcr -= const_128;
 
-    UNPCK_R_SB_TO_SW_YCBCR(input_y, input_cbcr, y_w0, y_w1, cb_w0, cb_w1,
-                           cr_w0, cr_w1);
+    y_h0 = (v8i16) __msa_ilvr_b((v16i8) zero, (v16i8) input_y);
+    UNPCK_SB_SH(input_cbcr, cb_h0, cr_h0);
+    UNPCK_SH_SW(cb_h0, cb_w0, cb_w1);
+    UNPCK_SH_SW(cr_h0, cr_w0, cr_w1);
 
-    CALC_B2_FRM_YUV(y_w0, y_w1, cb_w0, cb_w1, out_b0, out_b1);
+    CALC_R2_FRM_YUV(y_h0, cr_w0, cr_w1, out_r0);
+    CALC_G2_FRM_YUV(y_h0, cb_h0, cr_h0, out_g0);
+    CALC_B2_FRM_YUV(y_h0, cb_w0, cb_w1, out_b0);
 
-    CALC_G2_FRM_YUV(y_w0, y_w1, cb_w0, cb_w1, cr_w0, cr_w1, out_g0, out_g1);
-
-    VSHF_B2_SB(out_b0, out_g0, out_b1, out_g1, mask, mask, out_bg0,
-               out_bg1);
-
-    CALC_R2_FRM_YUV(y_w0, y_w1, cr_w0, cr_w1, out_r0, out_r1);
-
-    VSHF_B2_SB(out_r0, alpha, out_r1, alpha, mask, mask, out_ra0, out_ra1);
-
-    ILVR_H2_UB(out_ra0, out_bg0, out_ra1, out_bg1, out0, out1);
+    out_rgb0 = (v16i8) __msa_ilvr_b((v16i8) out_g0, (v16i8) out_b0);
+    out_ra0 = (v16i8) __msa_ilvr_b(alpha, (v16i8) out_r0);
+    ILVRL_H2_UB(out_ra0, out_rgb0, out0, out1);
 
     ST_UB2(out0, out1, p_rgb, 16);
     p_rgb += 16 * 2;
@@ -660,19 +584,16 @@ yuv_argb_convert_msa (JSAMPROW p_in_y, JSAMPROW p_in_cb, JSAMPROW p_in_cr,
 {
   int y, cb, cr;
   unsigned int col, num_cols_mul_16 = out_width >> 4;
-  unsigned int remaining_wd = out_width & 15;
-  v16u8 mask = {0, 16, 4, 20, 8, 24, 12, 28, 0, 0, 0, 0, 0, 0, 0, 0};
-  v16i8 const_128 = __msa_ldi_b(128);
+  unsigned int remaining_wd = out_width & 0xF;
   v16i8 alpha = __msa_ldi_b(0xFF);
+  v16i8 const_128 = __msa_ldi_b(128);
   v16u8 out0, out1, out2, out3, input_y = {0};
-  v16i8 input_cb, input_cr, out_ar0, out_ar1, out_ar2, out_ar3;
-  v16i8 out_gb0, out_gb1, out_gb2, out_gb3;
-  v4i32 y_w0, y_w1, y_w2, y_w3, cb_w0, cb_w1, cb_w2, cb_w3;
-  v4i32 cr_w0, cr_w1, cr_w2, cr_w3, out_r0, out_r1, out_r2, out_r3;
-  v4i32 out_g0, out_g1, out_g2, out_g3, out_b0, out_b1, out_b2, out_b3;
-  v4i32 zero = {0};
+  v16i8 input_cb, input_cr, out_rgb0, out_rgb1, out_ar0, out_ar1;
+  v8i16 y_h0, y_h1, cb_h0, cb_h1, cr_h0, cr_h1;
+  v4i32 cb_w0, cb_w1, cb_w2, cb_w3, cr_w0, cr_w1, cr_w2, cr_w3, zero = {0};
+  v16i8  out_r0, out_g0, out_b0;
 
-  for (col = num_cols_mul_16; col-- ;) {
+  for (col = num_cols_mul_16; col--;) {
     input_y = LD_UB(p_in_y);
     input_cb = LD_SB(p_in_cb);
     input_cr = LD_SB(p_in_cr);
@@ -684,30 +605,25 @@ yuv_argb_convert_msa (JSAMPROW p_in_y, JSAMPROW p_in_cb, JSAMPROW p_in_cr,
     input_cb -= const_128;
     input_cr -= const_128;
 
-    UNPCK_SB_TO_SW_YCBCR(input_y, input_cb, input_cr, y_w0, y_w1, y_w2,
-                         y_w3, cb_w0, cb_w1, cb_w2, cb_w3, cr_w0, cr_w1,
-                         cr_w2, cr_w3);
+    UNPCK_UB_SH(input_y, y_h0, y_h1);
+    UNPCK_SB_SH(input_cb, cb_h0, cb_h1);
+    UNPCK_SB_SH(input_cr, cr_h0, cr_h1);
 
-    CALC_R4_FRM_YUV(y_w0, y_w1, y_w2, y_w3, cr_w0, cr_w1, cr_w2, cr_w3,
-                    out_r0, out_r1, out_r2, out_r3);
+    CALC_G4_FRM_YUV(y_h0, y_h1, cb_h0, cb_h1, cr_h0, cr_h1, out_g0);
 
-    CALC_G4_FRM_YUV(y_w0, y_w1, y_w2, y_w3, cb_w0, cb_w1, cb_w2, cb_w3,
-                    cr_w0, cr_w1, cr_w2, cr_w3, out_g0, out_g1, out_g2,
-                    out_g3);
+    UNPCK_SH_SW(cr_h0, cr_w0, cr_w1);
+    UNPCK_SH_SW(cr_h1, cr_w2, cr_w3);
+    CALC_R4_FRM_YUV(y_h0, y_h1, cr_w0, cr_w1, cr_w2, cr_w3, out_r0);
 
-    VSHF_B2_SB(alpha, out_r0, alpha, out_r1, mask, mask, out_ar0, out_ar1);
-    VSHF_B2_SB(alpha, out_r2, alpha, out_r3, mask, mask, out_ar2, out_ar3);
+    UNPCK_SH_SW(cb_h0, cb_w0, cb_w1);
+    UNPCK_SH_SW(cb_h1, cb_w2, cb_w3);
+    CALC_B4_FRM_YUV(y_h0, y_h1, cb_w0, cb_w1, cb_w2, cb_w3, out_b0);
 
-    CALC_B4_FRM_YUV(y_w0, y_w1, y_w2, y_w3, cb_w0, cb_w1, cb_w2, cb_w3,
-                    out_b0, out_b1, out_b2, out_b3);
+    ILVRL_B2_SB(out_b0, out_g0, out_rgb0, out_rgb1);
+    ILVRL_B2_SB(out_r0, alpha, out_ar0, out_ar1);
 
-    VSHF_B2_SB(out_g0, out_b0, out_g1, out_b1, mask, mask, out_gb0,
-               out_gb1);
-    VSHF_B2_SB(out_g2, out_b2, out_g3, out_b3, mask, mask, out_gb2,
-               out_gb3);
-
-    ILVR_H4_UB(out_gb0, out_ar0, out_gb1, out_ar1, out_gb2, out_ar2,
-               out_gb3, out_ar3, out0, out1, out2, out3);
+    ILVRL_H2_UB(out_rgb0, out_ar0, out0, out1);
+    ILVRL_H2_UB(out_rgb1, out_ar1, out2, out3);
 
     ST_UB4(out0, out1, out2, out3, p_rgb, 16);
     p_rgb += 16 * 4;
@@ -731,21 +647,18 @@ yuv_argb_convert_msa (JSAMPROW p_in_y, JSAMPROW p_in_cb, JSAMPROW p_in_cr,
 
     input_cbcr -= const_128;
 
-    UNPCK_R_SB_TO_SW_YCBCR(input_y, input_cbcr, y_w0, y_w1, cb_w0, cb_w1,
-                           cr_w0, cr_w1);
+    y_h0 = (v8i16) __msa_ilvr_b((v16i8) zero, (v16i8) input_y);
+    UNPCK_SB_SH(input_cbcr, cb_h0, cr_h0);
+    UNPCK_SH_SW(cb_h0, cb_w0, cb_w1);
+    UNPCK_SH_SW(cr_h0, cr_w0, cr_w1);
 
-    CALC_R2_FRM_YUV(y_w0, y_w1, cr_w0, cr_w1, out_r0, out_r1);
+    CALC_R2_FRM_YUV(y_h0, cr_w0, cr_w1, out_r0);
+    CALC_G2_FRM_YUV(y_h0, cb_h0, cr_h0, out_g0);
+    CALC_B2_FRM_YUV(y_h0, cb_w0, cb_w1, out_b0);
 
-    CALC_G2_FRM_YUV(y_w0, y_w1, cb_w0, cb_w1, cr_w0, cr_w1, out_g0, out_g1);
-
-    VSHF_B2_SB(alpha, out_r0, alpha, out_r1, mask, mask, out_ar0, out_ar1);
-
-    CALC_B2_FRM_YUV(y_w0, y_w1, cb_w0, cb_w1, out_b0, out_b1);
-
-    VSHF_B2_SB(out_g0, out_b0, out_g1, out_b1, mask, mask, out_gb0,
-               out_gb1);
-
-    ILVR_H2_UB(out_gb0, out_ar0, out_gb1, out_ar1, out0, out1);
+    out_rgb0 = (v16i8) __msa_ilvr_b((v16i8) out_b0, (v16i8) out_g0);
+    out_ar0 = (v16i8) __msa_ilvr_b((v16i8) out_r0, alpha);
+    ILVRL_H2_UB(out_rgb0, out_ar0, out0, out1);
 
     ST_UB2(out0, out1, p_rgb, 16);
     p_rgb += 16 * 2;
@@ -773,19 +686,16 @@ yuv_abgr_convert_msa (JSAMPROW p_in_y, JSAMPROW p_in_cb, JSAMPROW p_in_cr,
 {
   int y, cb, cr;
   unsigned int col, num_cols_mul_16 = out_width >> 4;
-  unsigned int remaining_wd = out_width & 15;
-  v16u8 mask = {0, 16, 4, 20, 8, 24, 12, 28, 0, 0, 0, 0, 0, 0, 0, 0};
-  v16i8 const_128 = __msa_ldi_b(128);
+  unsigned int remaining_wd = out_width & 0xF;
   v16i8 alpha = __msa_ldi_b(0xFF);
+  v16i8 const_128 = __msa_ldi_b(128);
   v16u8 out0, out1, out2, out3, input_y = {0};
-  v16i8 input_cb, input_cr, out_ab0, out_ab1, out_ab2, out_ab3;
-  v16i8 out_gr0, out_gr1, out_gr2, out_gr3;
-  v4i32 y_w0, y_w1, y_w2, y_w3, cb_w0, cb_w1, cb_w2, cb_w3;
-  v4i32 cr_w0, cr_w1, cr_w2, cr_w3, out_r0, out_r1, out_r2, out_r3;
-  v4i32 out_g0, out_g1, out_g2, out_g3, out_b0, out_b1, out_b2, out_b3;
-  v4i32 zero = {0};
+  v16i8 input_cb, input_cr, out_rgb0, out_rgb1, out_ab0, out_ab1;
+  v8i16 y_h0, y_h1, cb_h0, cb_h1, cr_h0, cr_h1;
+  v4i32 cb_w0, cb_w1, cb_w2, cb_w3, cr_w0, cr_w1, cr_w2, cr_w3, zero = {0};
+  v16i8  out_r0, out_g0, out_b0;
 
-  for (col = num_cols_mul_16; col-- ;) {
+  for (col = num_cols_mul_16; col--;) {
     input_y = LD_UB(p_in_y);
     input_cb = LD_SB(p_in_cb);
     input_cr = LD_SB(p_in_cr);
@@ -797,30 +707,25 @@ yuv_abgr_convert_msa (JSAMPROW p_in_y, JSAMPROW p_in_cb, JSAMPROW p_in_cr,
     input_cb -= const_128;
     input_cr -= const_128;
 
-    UNPCK_SB_TO_SW_YCBCR(input_y, input_cb, input_cr, y_w0, y_w1, y_w2,
-                         y_w3, cb_w0, cb_w1, cb_w2, cb_w3, cr_w0, cr_w1,
-                         cr_w2, cr_w3);
+    UNPCK_UB_SH(input_y, y_h0, y_h1);
+    UNPCK_SB_SH(input_cb, cb_h0, cb_h1);
+    UNPCK_SB_SH(input_cr, cr_h0, cr_h1);
 
-    CALC_B4_FRM_YUV(y_w0, y_w1, y_w2, y_w3, cb_w0, cb_w1, cb_w2, cb_w3,
-                    out_b0, out_b1, out_b2, out_b3);
+    CALC_G4_FRM_YUV(y_h0, y_h1, cb_h0, cb_h1, cr_h0, cr_h1, out_g0);
 
-    CALC_G4_FRM_YUV(y_w0, y_w1, y_w2, y_w3, cb_w0, cb_w1, cb_w2, cb_w3,
-                    cr_w0, cr_w1, cr_w2, cr_w3, out_g0, out_g1, out_g2,
-                    out_g3);
+    UNPCK_SH_SW(cr_h0, cr_w0, cr_w1);
+    UNPCK_SH_SW(cr_h1, cr_w2, cr_w3);
+    CALC_R4_FRM_YUV(y_h0, y_h1, cr_w0, cr_w1, cr_w2, cr_w3, out_r0);
 
-    VSHF_B2_SB(alpha, out_b0, alpha, out_b1, mask, mask, out_ab0, out_ab1);
-    VSHF_B2_SB(alpha, out_b2, alpha, out_b3, mask, mask, out_ab2, out_ab3);
+    UNPCK_SH_SW(cb_h0, cb_w0, cb_w1);
+    UNPCK_SH_SW(cb_h1, cb_w2, cb_w3);
+    CALC_B4_FRM_YUV(y_h0, y_h1, cb_w0, cb_w1, cb_w2, cb_w3, out_b0);
 
-    CALC_R4_FRM_YUV(y_w0, y_w1, y_w2, y_w3, cr_w0, cr_w1, cr_w2, cr_w3,
-                    out_r0, out_r1, out_r2, out_r3);
+    ILVRL_B2_SB(out_r0, out_g0, out_rgb0, out_rgb1);
+    ILVRL_B2_SB(out_b0, alpha, out_ab0, out_ab1);
 
-    VSHF_B2_SB(out_g0, out_r0, out_g1, out_r1, mask, mask, out_gr0,
-               out_gr1);
-    VSHF_B2_SB(out_g2, out_r2, out_g3, out_r3, mask, mask, out_gr2,
-               out_gr3);
-
-    ILVR_H4_UB(out_gr0, out_ab0, out_gr1, out_ab1, out_gr2, out_ab2,
-               out_gr3, out_ab3, out0, out1, out2, out3);
+    ILVRL_H2_UB(out_rgb0, out_ab0, out0, out1);
+    ILVRL_H2_UB(out_rgb1, out_ab1, out2, out3);
 
     ST_UB4(out0, out1, out2, out3, p_rgb, 16);
     p_rgb += 16 * 4;
@@ -844,21 +749,18 @@ yuv_abgr_convert_msa (JSAMPROW p_in_y, JSAMPROW p_in_cb, JSAMPROW p_in_cr,
 
     input_cbcr -= const_128;
 
-    UNPCK_R_SB_TO_SW_YCBCR(input_y, input_cbcr, y_w0, y_w1, cb_w0, cb_w1,
-                           cr_w0, cr_w1);
+    y_h0 = (v8i16) __msa_ilvr_b((v16i8) zero, (v16i8) input_y);
+    UNPCK_SB_SH(input_cbcr, cb_h0, cr_h0);
+    UNPCK_SH_SW(cb_h0, cb_w0, cb_w1);
+    UNPCK_SH_SW(cr_h0, cr_w0, cr_w1);
 
-    CALC_B2_FRM_YUV(y_w0, y_w1, cb_w0, cb_w1, out_b0, out_b1);
+    CALC_R2_FRM_YUV(y_h0, cr_w0, cr_w1, out_r0);
+    CALC_G2_FRM_YUV(y_h0, cb_h0, cr_h0, out_g0);
+    CALC_B2_FRM_YUV(y_h0, cb_w0, cb_w1, out_b0);
 
-    CALC_G2_FRM_YUV(y_w0, y_w1, cb_w0, cb_w1, cr_w0, cr_w1, out_g0, out_g1);
-
-    VSHF_B2_SB(alpha, out_b0, alpha, out_b1, mask, mask, out_ab0, out_ab1);
-
-    CALC_R2_FRM_YUV(y_w0, y_w1, cr_w0, cr_w1, out_r0, out_r1);
-
-    VSHF_B2_SB(out_g0, out_r0, out_g1, out_r1, mask, mask, out_gr0,
-               out_gr1);
-
-    ILVR_H2_UB(out_gr0, out_ab0, out_gr1, out_ab1, out0, out1);
+    out_rgb0 = (v16i8) __msa_ilvr_b((v16i8) out_r0, (v16i8) out_g0);
+    out_ab0 = (v16i8) __msa_ilvr_b((v16i8) out_b0, alpha);
+    ILVRL_H2_UB(out_rgb0, out_ab0, out0, out1);
 
     ST_UB2(out0, out1, p_rgb, 16);
     p_rgb += 16 * 2;
