@@ -325,6 +325,9 @@ jsimd_can_h2v2_upsample (void)
   if (sizeof(JDIMENSION) != 4)
     return 0;
 
+  if (simd_support & JSIMD_MSA)
+    return 1;
+
   return 0;
 }
 
@@ -338,6 +341,9 @@ jsimd_can_h2v1_upsample (void)
     return 0;
   if (sizeof(JDIMENSION) != 4)
     return 0;
+
+  if (simd_support & JSIMD_MSA)
+    return 1;
 
   return 0;
 }
@@ -362,6 +368,8 @@ jsimd_h2v2_upsample (j_decompress_ptr cinfo,
                      JSAMPARRAY input_data,
                      JSAMPARRAY *output_data_ptr)
 {
+  jsimd_h2v2_upsample_msa(cinfo->max_v_samp_factor, cinfo->output_width,
+                          input_data, output_data_ptr);
 }
 
 GLOBAL(void)
@@ -370,6 +378,8 @@ jsimd_h2v1_upsample (j_decompress_ptr cinfo,
                      JSAMPARRAY input_data,
                      JSAMPARRAY *output_data_ptr)
 {
+  jsimd_h2v1_upsample_msa(cinfo->max_v_samp_factor, cinfo->output_width,
+                          input_data, output_data_ptr);
 }
 
 GLOBAL(void)
@@ -388,6 +398,9 @@ jsimd_can_h2v2_fancy_upsample (void)
     return 0;
   if (sizeof(JDIMENSION) != 4)
     return 0;
+
+  if (simd_support & JSIMD_MSA)
+    return 1;
 
   return 0;
 }
@@ -415,6 +428,10 @@ jsimd_h2v2_fancy_upsample (j_decompress_ptr cinfo,
                            JSAMPARRAY input_data,
                            JSAMPARRAY *output_data_ptr)
 {
+  if (simd_support & JSIMD_MSA)
+    jsimd_h2v2_fancy_upsample_msa(cinfo->max_v_samp_factor,
+                                  compptr->downsampled_width,
+                                  input_data, output_data_ptr);
 }
 
 GLOBAL(void)
@@ -424,9 +441,9 @@ jsimd_h2v1_fancy_upsample (j_decompress_ptr cinfo,
                            JSAMPARRAY *output_data_ptr)
 {
   if (simd_support & JSIMD_MSA)
-  jsimd_h2v1_fancy_upsample_msa(cinfo->max_v_samp_factor,
-                                compptr->downsampled_width,
-                                input_data, output_data_ptr);
+    jsimd_h2v1_fancy_upsample_msa(cinfo->max_v_samp_factor,
+                                  compptr->downsampled_width,
+                                  input_data, output_data_ptr);
 }
 
 GLOBAL(int)
