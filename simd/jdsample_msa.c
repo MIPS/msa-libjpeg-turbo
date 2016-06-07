@@ -39,8 +39,10 @@ image_upsample_h2v1_msa (JSAMPARRAY src, JSAMPARRAY dst,
   v16u8 src0, src1, src2, src3;
   v16u8 dst0_l, dst0_r, dst1_l, dst1_r, dst2_l, dst2_r, dst3_l, dst3_r;
 
+  inrow = 0;
+
   /* Height multiple of 2 */
-  for (inrow = 0; inrow < (height & ~1); inrow += 2) {
+  for (; inrow < (height & ~1); inrow += 2) {
     inptr = src[inrow];
     inptr1 = src[inrow + 1];
     outptr = dst[inrow];
@@ -69,7 +71,7 @@ image_upsample_h2v1_msa (JSAMPARRAY src, JSAMPARRAY dst,
       src2 = LD_UB(inptr1);
     }
 
-    if(out32end > out64end) {
+    if (out32end > out64end) {
       ILVRL_B2_UB(src0, src0, dst0_r, dst0_l);
       ILVRL_B2_UB(src2, src2, dst2_r, dst2_l);
       ST_UB2(dst0_r, dst0_l, outptr, 16);
@@ -97,7 +99,7 @@ image_upsample_h2v1_msa (JSAMPARRAY src, JSAMPARRAY dst,
       src0 = LD_UB(inptr);
     }
 
-    if(out32end > out64end) {
+    if (out32end > out64end) {
       ILVRL_B2_UB(src0, src0, dst0_r, dst0_l);
       ST_UB2(dst0_r, dst0_l, outptr, 16);
     }
@@ -136,7 +138,7 @@ image_upsample_h2v2_msa (JSAMPARRAY src, JSAMPARRAY dst,
       src0 = LD_UB(inptr);
     }
 
-    if(out32end > out64end) {
+    if (out32end > out64end) {
       ILVRL_B2_UB(src0, src0, dst0_r, dst0_l);
       ST_UB2(dst0_r, dst0_l, outptr, 16);
       ST_UB2(dst0_r, dst0_l, outptr + out_width, 16);
@@ -166,13 +168,13 @@ image_upsample_fancy_h2v1_msa (JSAMPARRAY src, JSAMPARRAY dst,
   v8i16 left_r, left_l, cur_r, cur_l, right_r, right_l, zero = {0};
   v16i8 out0, out1, src2, src0, src1, left, right;
 
-  for(row = 0; row < height; row++) {
+  for (row = 0; row < height; row++) {
     /* Prepare first 16 width column */
     src1 = LD_SB(src);
     src2 = LD_SB(src + 16);
     src0 = __msa_splati_b(src1, 0);
 
-    for(col = 0; col < width; col += 16) {
+    for (col = 0; col < width; col += 16) {
       left = __msa_sldi_b(src1, src0, 15); /* -1 0 1 2 ... 12 13 14 */
       right = __msa_sldi_b(src2, src1, 1); /* 1 2 3 4 ... 14 15 16 */
 
