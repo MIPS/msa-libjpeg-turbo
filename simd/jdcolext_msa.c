@@ -55,13 +55,13 @@ static inline unsigned char clip_pixel (int val)
                                                                            \
   ILVRL_H2_SH(cr_h0, cb_h0, tmp0_m, tmp1_m);                               \
   UNPCK_SH_SW((-cr_h0), out0_m, out1_m);                                   \
-  out0_m <<= 16;                                                           \
-  out1_m <<= 16;                                                           \
+  out0_m = MSA_SLLI_W(out0_m, 16);                                         \
+  out1_m = MSA_SLLI_W(out1_m, 16);                                         \
   DPADD_SH2_SW(tmp0_m, tmp1_m, const0_m, const0_m, out0_m, out1_m);        \
   ILVRL_H2_SH(cr_h1, cb_h1, tmp0_m, tmp1_m);                               \
   UNPCK_SH_SW((-cr_h1), out2_m, out3_m);                                   \
-  out2_m <<= 16;                                                           \
-  out3_m <<= 16;                                                           \
+  out2_m = MSA_SLLI_W(out2_m, 16);                                         \
+  out3_m = MSA_SLLI_W(out3_m, 16);                                         \
   DPADD_SH2_SW(tmp0_m, tmp1_m, const0_m, const0_m, out2_m, out3_m);        \
   SRARI_W4_SW(out0_m, out1_m, out2_m, out3_m, 16);                         \
   PCKEV_H2_SH(out1_m, out0_m, out3_m, out2_m, tmp0_m, tmp1_m);             \
@@ -79,8 +79,8 @@ static inline unsigned char clip_pixel (int val)
                                                                      \
   ILVRL_H2_SH(cr_h0, cb_h0, tmp0_m, tmp1_m);                         \
   UNPCK_SH_SW((-cr_h0), out0_m, out1_m);                             \
-  out0_m <<= 16;                                                     \
-  out1_m <<= 16;                                                     \
+  out0_m = MSA_SLLI_W(out0_m, 16);                                   \
+  out1_m = MSA_SLLI_W(out1_m, 16);                                   \
   DPADD_SH2_SW(tmp0_m, tmp1_m, const0_m, const0_m, out0_m, out1_m);  \
   SRARI_W2_SW(out0_m, out1_m, 16);                                   \
   tmp0_m = __msa_pckev_h((v8i16) out1_m, (v8i16) out0_m);            \
