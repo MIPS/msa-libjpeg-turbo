@@ -512,6 +512,7 @@
   out0 = (RTYPE) __msa_ilvr_b((v16i8) in0, (v16i8) in1);  \
   out1 = (RTYPE) __msa_ilvl_b((v16i8) in0, (v16i8) in1);  \
 }
+#define ILVRL_B2_UB(...) ILVRL_B2(v16u8, __VA_ARGS__)
 #define ILVRL_B2_SB(...) ILVRL_B2(v16i8, __VA_ARGS__)
 #define ILVRL_B2_SH(...) ILVRL_B2(v8i16, __VA_ARGS__)
 
@@ -585,6 +586,8 @@
   out0 = (RTYPE) __msa_pckev_b((v16i8) in0, (v16i8) in1);  \
   out1 = (RTYPE) __msa_pckev_b((v16i8) in2, (v16i8) in3);  \
 }
+#define PCKEV_B2_SB(...) PCKEV_B2(v16i8, __VA_ARGS__)
+
 #define PCKEV_B4(RTYPE, in0, in1, in2, in3, in4, in5, in6, in7,  \
                  out0, out1, out2, out3) {                       \
   PCKEV_B2(RTYPE, in0, in1, in2, in3, out0, out1);               \
