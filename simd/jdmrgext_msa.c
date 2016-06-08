@@ -36,8 +36,7 @@
 
 #define ROUND_POWER_OF_TWO(value, n)  (((value) + (1 << ((n) - 1))) >> (n))
 
-static inline unsigned char clip_pixel(int val)
-{
+static inline unsigned char clip_pixel (int val) {
     return ((val & ~0xFF) ? ((-val) >> 31) & 0xFF : val);
 }
 
@@ -68,9 +67,8 @@ static inline unsigned char clip_pixel(int val)
   DPADD_SH2_SW(tmp0_m, tmp1_m, const0_m, const0_m, out2_m, out3_m);          \
   SRARI_W4_SW(out0_m, out1_m, out2_m, out3_m, 16);                           \
   PCKEV_H2_SH(out1_m, out0_m, out3_m, out2_m, tmp0_m, tmp1_m);               \
-  tmp2_m = tmp0_m; tmp3_m = tmp1_m;                                          \
-  ADD2(y_h0, tmp0_m, y_h1, tmp1_m, tmp0_m, tmp1_m);                          \
-  ADD2(y_h2, tmp2_m, y_h3, tmp3_m, tmp2_m, tmp3_m);                          \
+  ADD4(y_h2, tmp0_m, y_h3, tmp1_m, y_h0, tmp0_m, y_h1, tmp1_m, tmp2_m,       \
+       tmp3_m, tmp0_m, tmp1_m);                                              \
   CLIP_SH4_0_255(tmp0_m, tmp1_m, tmp2_m, tmp3_m);                            \
   PCKEV_B2_SB(tmp1_m, tmp0_m, tmp3_m, tmp2_m, out_g0, out_g1);               \
 }
@@ -89,8 +87,7 @@ static inline unsigned char clip_pixel(int val)
   DPADD_SH2_SW(tmp0_m, tmp1_m, const0_m, const0_m, out0_m, out1_m);  \
   SRARI_W2_SW(out0_m, out1_m, 16);                                   \
   tmp0_m = __msa_pckev_h((v8i16) out1_m, (v8i16) out0_m);            \
-  tmp2_m = tmp0_m;                                                   \
-  tmp0_m += y_h0; tmp2_m += y_h1;                                    \
+  ADD2(y_h1, tmp0_m, y_h0, tmp0_m, tmp2_m, tmp0_m);                  \
   CLIP_SH2_0_255(tmp0_m, tmp2_m);                                    \
   PCKEV_B2_SB(tmp0_m, tmp0_m, tmp2_m, tmp2_m, out_g0, out_g1);       \
 }
@@ -107,9 +104,8 @@ static inline unsigned char clip_pixel(int val)
        out0_m, out1_m, out2_m, out3_m);                                      \
   SRARI_W4_SW(out0_m, out1_m, out2_m, out3_m, 16);                           \
   PCKEV_H2_SH(out1_m, out0_m, out3_m, out2_m, tmp0_m, tmp1_m);               \
-  tmp2_m = tmp0_m; tmp3_m = tmp1_m;                                          \
-  ADD2(y_h0, tmp0_m, y_h1, tmp1_m, tmp0_m, tmp1_m);                          \
-  ADD2(y_h2, tmp2_m, y_h3, tmp3_m, tmp2_m, tmp3_m);                          \
+  ADD4(y_h2, tmp0_m, y_h3, tmp1_m, y_h0, tmp0_m, y_h1, tmp1_m, tmp2_m,       \
+       tmp3_m, tmp0_m, tmp1_m);                                              \
   CLIP_SH4_0_255(tmp0_m, tmp1_m, tmp2_m, tmp3_m);                            \
   PCKEV_B2_SB(tmp1_m, tmp0_m, tmp3_m, tmp2_m, out_r0, out_r1);               \
 }
@@ -123,8 +119,7 @@ static inline unsigned char clip_pixel(int val)
   MUL2(const_1_40200_m, cr_w0, const_1_40200_m, cr_w1, out0_m, out1_m);  \
   SRARI_W2_SW(out0_m, out1_m, 16);                                       \
   tmp0_m = __msa_pckev_h((v8i16) out1_m, (v8i16) out0_m);                \
-  tmp2_m = tmp0_m;                                                       \
-  tmp0_m += y_h0; tmp2_m += y_h1;                                        \
+  ADD2(y_h1, tmp0_m, y_h0, tmp0_m, tmp2_m, tmp0_m);                      \
   CLIP_SH2_0_255(tmp0_m, tmp2_m);                                        \
   PCKEV_B2_SB(tmp0_m, tmp0_m, tmp2_m, tmp2_m, out_r0, out_r1);           \
 }
@@ -141,9 +136,8 @@ static inline unsigned char clip_pixel(int val)
        out0_m, out1_m, out2_m, out3_m);                                      \
   SRARI_W4_SW(out0_m, out1_m, out2_m, out3_m, 16);                           \
   PCKEV_H2_SH(out1_m, out0_m, out3_m, out2_m, tmp0_m, tmp1_m);               \
-  tmp2_m = tmp0_m; tmp3_m = tmp1_m;                                          \
-  ADD2(y_h0, tmp0_m, y_h1, tmp1_m, tmp0_m, tmp1_m);                          \
-  ADD2(y_h2, tmp2_m, y_h3, tmp3_m, tmp2_m, tmp3_m);                          \
+  ADD4(y_h2, tmp0_m, y_h3, tmp1_m, y_h0, tmp0_m, y_h1, tmp1_m, tmp2_m,       \
+       tmp3_m, tmp0_m, tmp1_m);                                              \
   CLIP_SH4_0_255(tmp0_m, tmp1_m, tmp2_m, tmp3_m);                            \
   PCKEV_B2_SB(tmp1_m, tmp0_m, tmp3_m, tmp2_m, out_b0, out_b1);               \
 }
@@ -157,8 +151,7 @@ static inline unsigned char clip_pixel(int val)
   MUL2(const_1_77200_m, cb_w0, const_1_77200_m, cb_w1, out0_m, out1_m);  \
   SRARI_W2_SW(out0_m, out1_m, 16);                                       \
   tmp0_m = __msa_pckev_h((v8i16) out1_m, (v8i16) out0_m);                \
-  tmp2_m = tmp0_m;                                                       \
-  tmp0_m += y_h0; tmp2_m += y_h1;                                        \
+  ADD2(y_h1, tmp0_m, y_h0, tmp0_m, tmp2_m, tmp0_m);                      \
   CLIP_SH2_0_255(tmp0_m, tmp2_m);                                        \
   PCKEV_B2_SB(tmp0_m, tmp0_m, tmp2_m, tmp2_m, out_b0, out_b1);           \
 }
@@ -184,17 +177,14 @@ static inline unsigned char clip_pixel(int val)
   DPADD_SH2_SW(tmp0_m, tmp1_m, const0_m, const0_m, out2_m, out3_m);           \
   SRARI_W4_SW(out0_m, out1_m, out2_m, out3_m, 16);                            \
   PCKEV_H2_SH(out1_m, out0_m, out3_m, out2_m, tmp0_m, tmp1_m);                \
-  tmp2_m = tmp0_m; tmp3_m = tmp1_m;                                           \
-  tmp4_m = tmp0_m; tmp5_m = tmp1_m;                                           \
-  tmp6_m = tmp0_m; tmp7_m = tmp1_m;                                           \
-  ADD2(y_h0, tmp0_m, y_h1, tmp1_m, tmp0_m, tmp1_m);                           \
-  ADD2(y_h2, tmp2_m, y_h3, tmp3_m, tmp2_m, tmp3_m);                           \
-  CLIP_SH4_0_255(tmp0_m, tmp1_m, tmp2_m, tmp3_m);                             \
-  PCKEV_B2_SB(tmp1_m, tmp0_m, tmp3_m, tmp2_m, out_g0, out_g1);                \
-  ADD2(y_h4, tmp4_m, y_h5, tmp5_m, tmp4_m, tmp5_m);                           \
-  ADD2(y_h6, tmp6_m, y_h7, tmp7_m, tmp6_m, tmp7_m);                           \
+  ADD4(y_h4, tmp0_m, y_h5, tmp1_m, y_h6, tmp0_m, y_h7, tmp1_m, tmp4_m,        \
+       tmp5_m, tmp6_m, tmp7_m);                                               \
   CLIP_SH4_0_255(tmp4_m, tmp5_m, tmp6_m, tmp7_m);                             \
   PCKEV_B2_SB(tmp5_m, tmp4_m, tmp7_m, tmp6_m, out_g2, out_g3);                \
+  ADD4(y_h3, tmp1_m, y_h2, tmp0_m, y_h1, tmp1_m, y_h0, tmp0_m, tmp3_m,        \
+       tmp2_m, tmp1_m, tmp0_m);                                               \
+  CLIP_SH4_0_255(tmp0_m, tmp1_m, tmp2_m, tmp3_m);                             \
+  PCKEV_B2_SB(tmp1_m, tmp0_m, tmp3_m, tmp2_m, out_g0, out_g1);                \
 }
 
 #define CALC_G2_FRM_YUV2(y_h0, y_h1, y_h2, y_h3, cb_h0, cr_h0, out_g0,  \
@@ -212,8 +202,8 @@ static inline unsigned char clip_pixel(int val)
   DPADD_SH2_SW(tmp0_m, tmp1_m, const0_m, const0_m, out0_m, out1_m);     \
   SRARI_W2_SW(out0_m, out1_m, 16);                                      \
   tmp0_m = __msa_pckev_h((v8i16) out1_m, (v8i16) out0_m);               \
-  tmp2_m = tmp0_m; tmp1_m = tmp0_m; tmp3_m = tmp0_m;                    \
-  tmp0_m += y_h0; tmp2_m += y_h1; tmp1_m += y_h2; tmp3_m += y_h3;       \
+  ADD4(y_h3, tmp0_m, y_h2, tmp0_m, y_h1, tmp0_m, y_h0, tmp0_m, tmp3_m,  \
+       tmp1_m, tmp2_m, tmp0_m);                                         \
   CLIP_SH4_0_255(tmp0_m, tmp2_m, tmp1_m, tmp3_m);                       \
   PCKEV_B2_SB(tmp1_m, tmp0_m, tmp3_m, tmp2_m, out_g0, out_g1);          \
 }
@@ -231,17 +221,14 @@ static inline unsigned char clip_pixel(int val)
        out0_m, out1_m, out2_m, out3_m);                                       \
   SRARI_W4_SW(out0_m, out1_m, out2_m, out3_m, 16);                            \
   PCKEV_H2_SH(out1_m, out0_m, out3_m, out2_m, tmp0_m, tmp1_m);                \
-  tmp2_m = tmp0_m; tmp3_m = tmp1_m;                                           \
-  tmp4_m = tmp0_m; tmp5_m = tmp1_m;                                           \
-  tmp6_m = tmp0_m; tmp7_m = tmp1_m;                                           \
-  ADD2(y_h0, tmp0_m, y_h1, tmp1_m, tmp0_m, tmp1_m);                           \
-  ADD2(y_h2, tmp2_m, y_h3, tmp3_m, tmp2_m, tmp3_m);                           \
-  CLIP_SH4_0_255(tmp0_m, tmp1_m, tmp2_m, tmp3_m);                             \
-  PCKEV_B2_SB(tmp1_m, tmp0_m, tmp3_m, tmp2_m, out_r0, out_r1);                \
-  ADD2(y_h4, tmp4_m, y_h5, tmp5_m, tmp4_m, tmp5_m);                           \
-  ADD2(y_h6, tmp6_m, y_h7, tmp7_m, tmp6_m, tmp7_m);                           \
+  ADD4(y_h4, tmp0_m, y_h5, tmp1_m, y_h6, tmp0_m, y_h7, tmp1_m, tmp4_m,        \
+       tmp5_m, tmp6_m, tmp7_m);                                               \
   CLIP_SH4_0_255(tmp4_m, tmp5_m, tmp6_m, tmp7_m);                             \
   PCKEV_B2_SB(tmp5_m, tmp4_m, tmp7_m, tmp6_m, out_r2, out_r3);                \
+  ADD4(y_h3, tmp1_m, y_h2, tmp0_m, y_h1, tmp1_m, y_h0, tmp0_m, tmp3_m,        \
+       tmp2_m, tmp1_m, tmp0_m);                                               \
+  CLIP_SH4_0_255(tmp0_m, tmp1_m, tmp2_m, tmp3_m);                             \
+  PCKEV_B2_SB(tmp1_m, tmp0_m, tmp3_m, tmp2_m, out_r0, out_r1);                \
 }
 
 #define CALC_R2_FRM_YUV2(y_h0, y_h1, y_h2, y_h3, cr_w0, cr_w1, out_r0,   \
@@ -254,8 +241,8 @@ static inline unsigned char clip_pixel(int val)
   MUL2(const_1_40200_m, cr_w0, const_1_40200_m, cr_w1, out0_m, out1_m);  \
   SRARI_W2_SW(out0_m, out1_m, 16);                                       \
   tmp0_m = __msa_pckev_h((v8i16) out1_m, (v8i16) out0_m);                \
-  tmp2_m = tmp0_m; tmp1_m = tmp0_m; tmp3_m = tmp0_m;                     \
-  tmp0_m += y_h0; tmp2_m += y_h1; tmp1_m += y_h2; tmp3_m += y_h3;        \
+  ADD4(y_h3, tmp0_m, y_h2, tmp0_m, y_h1, tmp0_m, y_h0, tmp0_m, tmp3_m,   \
+       tmp1_m, tmp2_m, tmp0_m);                                          \
   CLIP_SH4_0_255(tmp0_m, tmp2_m, tmp1_m, tmp3_m);                        \
   PCKEV_B2_SB(tmp1_m, tmp0_m, tmp3_m, tmp2_m, out_r0, out_r1);           \
 }
@@ -273,17 +260,14 @@ static inline unsigned char clip_pixel(int val)
        out0_m, out1_m, out2_m, out3_m);                                       \
   SRARI_W4_SW(out0_m, out1_m, out2_m, out3_m, 16);                            \
   PCKEV_H2_SH(out1_m, out0_m, out3_m, out2_m, tmp0_m, tmp1_m);                \
-  tmp2_m = tmp0_m; tmp3_m = tmp1_m;                                           \
-  tmp4_m = tmp0_m; tmp5_m = tmp1_m;                                           \
-  tmp6_m = tmp0_m; tmp7_m = tmp1_m;                                           \
-  ADD2(y_h0, tmp0_m, y_h1, tmp1_m, tmp0_m, tmp1_m);                           \
-  ADD2(y_h2, tmp2_m, y_h3, tmp3_m, tmp2_m, tmp3_m);                           \
-  CLIP_SH4_0_255(tmp0_m, tmp1_m, tmp2_m, tmp3_m);                             \
-  PCKEV_B2_SB(tmp1_m, tmp0_m, tmp3_m, tmp2_m, out_b0, out_b1);                \
-  ADD2(y_h4, tmp4_m, y_h5, tmp5_m, tmp4_m, tmp5_m);                           \
-  ADD2(y_h6, tmp6_m, y_h7, tmp7_m, tmp6_m, tmp7_m);                           \
+  ADD4(y_h4, tmp0_m, y_h5, tmp1_m, y_h6, tmp0_m, y_h7, tmp1_m, tmp4_m,        \
+       tmp5_m, tmp6_m, tmp7_m);                                               \
   CLIP_SH4_0_255(tmp4_m, tmp5_m, tmp6_m, tmp7_m);                             \
   PCKEV_B2_SB(tmp5_m, tmp4_m, tmp7_m, tmp6_m, out_b2, out_b3);                \
+  ADD4(y_h3, tmp1_m, y_h2, tmp0_m, y_h1, tmp1_m, y_h0, tmp0_m, tmp3_m,        \
+       tmp2_m, tmp1_m, tmp0_m);                                               \
+  CLIP_SH4_0_255(tmp0_m, tmp1_m, tmp2_m, tmp3_m);                             \
+  PCKEV_B2_SB(tmp1_m, tmp0_m, tmp3_m, tmp2_m, out_b0, out_b1);                \
 }
 
 #define CALC_B2_FRM_YUV2(y_h0, y_h1, y_h2, y_h3, cb_w0, cb_w1, out_b0,   \
@@ -296,16 +280,16 @@ static inline unsigned char clip_pixel(int val)
   MUL2(const_1_77200_m, cb_w0, const_1_77200_m, cb_w1, out0_m, out1_m);  \
   SRARI_W2_SW(out0_m, out1_m, 16);                                       \
   tmp0_m = __msa_pckev_h((v8i16) out1_m, (v8i16) out0_m);                \
-  tmp2_m = tmp0_m; tmp1_m = tmp0_m; tmp3_m = tmp0_m;                     \
-  tmp0_m += y_h0; tmp2_m += y_h1; tmp1_m += y_h2; tmp3_m += y_h3;        \
+  ADD4(y_h3, tmp0_m, y_h2, tmp0_m, y_h1, tmp0_m, y_h0, tmp0_m, tmp3_m,   \
+       tmp1_m, tmp2_m, tmp0_m);                                          \
   CLIP_SH4_0_255(tmp0_m, tmp2_m, tmp1_m, tmp3_m);                        \
   PCKEV_B2_SB(tmp1_m, tmp0_m, tmp3_m, tmp2_m, out_b0, out_b1);           \
 }
 
 void
-yuv_rgb_upsample_h2v1_msa(JSAMPROW p_in_y, JSAMPROW p_in_cb,
-                          JSAMPROW p_in_cr, JSAMPROW p_out,
-                          JDIMENSION out_width)
+yuv_rgb_upsample_h2v1_msa (JSAMPROW p_in_y, JSAMPROW p_in_cb,
+                           JSAMPROW p_in_cr, JSAMPROW p_out,
+                           JDIMENSION out_width)
 {
   int y, cb, cr, cred, cgreen, cblue;
   JDIMENSION col, num_cols_mul_32 = out_width >> 5;
@@ -513,9 +497,9 @@ yuv_rgb_upsample_h2v1_msa(JSAMPROW p_in_y, JSAMPROW p_in_cb,
 }
 
 void
-yuv_bgr_upsample_h2v1_msa(JSAMPROW p_in_y, JSAMPROW p_in_cb,
-                          JSAMPROW p_in_cr, JSAMPROW p_out,
-                          JDIMENSION out_width)
+yuv_bgr_upsample_h2v1_msa (JSAMPROW p_in_y, JSAMPROW p_in_cb,
+                           JSAMPROW p_in_cr, JSAMPROW p_out,
+                           JDIMENSION out_width)
 {
   int y, cb, cr, cred, cgreen, cblue;
   JDIMENSION col, num_cols_mul_32 = out_width >> 5;
@@ -721,9 +705,9 @@ yuv_bgr_upsample_h2v1_msa(JSAMPROW p_in_y, JSAMPROW p_in_cb,
 }
 
 void
-yuv_rgba_upsample_h2v1_msa(JSAMPROW p_in_y, JSAMPROW p_in_cb,
-                           JSAMPROW p_in_cr, JSAMPROW p_out,
-                           JDIMENSION out_width)
+yuv_rgba_upsample_h2v1_msa (JSAMPROW p_in_y, JSAMPROW p_in_cb,
+                            JSAMPROW p_in_cr, JSAMPROW p_out,
+                            JDIMENSION out_width)
 {
   int y, cb, cr, cred, cgreen, cblue;
   JDIMENSION col, num_cols_mul_32 = out_width >> 5;
@@ -914,9 +898,9 @@ yuv_rgba_upsample_h2v1_msa(JSAMPROW p_in_y, JSAMPROW p_in_cb,
 }
 
 void
-yuv_bgra_upsample_h2v1_msa(JSAMPROW p_in_y, JSAMPROW p_in_cb,
-                           JSAMPROW p_in_cr, JSAMPROW p_out,
-                           JDIMENSION out_width)
+yuv_bgra_upsample_h2v1_msa (JSAMPROW p_in_y, JSAMPROW p_in_cb,
+                            JSAMPROW p_in_cr, JSAMPROW p_out,
+                            JDIMENSION out_width)
 {
   int y, cb, cr, cred, cgreen, cblue;
   JDIMENSION col, num_cols_mul_32 = out_width >> 5;
@@ -1107,9 +1091,9 @@ yuv_bgra_upsample_h2v1_msa(JSAMPROW p_in_y, JSAMPROW p_in_cb,
 }
 
 void
-yuv_argb_upsample_h2v1_msa(JSAMPROW p_in_y, JSAMPROW p_in_cb,
-                           JSAMPROW p_in_cr, JSAMPROW p_out,
-                           JDIMENSION out_width)
+yuv_argb_upsample_h2v1_msa (JSAMPROW p_in_y, JSAMPROW p_in_cb,
+                            JSAMPROW p_in_cr, JSAMPROW p_out,
+                            JDIMENSION out_width)
 {
   int y, cb, cr, cred, cgreen, cblue;
   JDIMENSION col, num_cols_mul_32 = out_width >> 5;
@@ -1301,9 +1285,9 @@ yuv_argb_upsample_h2v1_msa(JSAMPROW p_in_y, JSAMPROW p_in_cb,
 }
 
 void
-yuv_abgr_upsample_h2v1_msa(JSAMPROW p_in_y, JSAMPROW p_in_cb,
-                           JSAMPROW p_in_cr, JSAMPROW p_out,
-                           JDIMENSION out_width)
+yuv_abgr_upsample_h2v1_msa (JSAMPROW p_in_y, JSAMPROW p_in_cb,
+                            JSAMPROW p_in_cr, JSAMPROW p_out,
+                            JDIMENSION out_width)
 {
   int y, cb, cr, cred, cgreen, cblue;
   JDIMENSION col, num_cols_mul_32 = out_width >> 5;
@@ -1495,10 +1479,10 @@ yuv_abgr_upsample_h2v1_msa(JSAMPROW p_in_y, JSAMPROW p_in_cb,
 }
 
 void
-yuv_rgb_upsample_h2v2_msa(JSAMPROW p_in_y0, JSAMPROW p_in_y1,
-                          JSAMPROW p_in_cb, JSAMPROW p_in_cr,
-                          JSAMPROW p_out0, JSAMPROW p_out1,
-                          JDIMENSION out_width)
+yuv_rgb_upsample_h2v2_msa (JSAMPROW p_in_y0, JSAMPROW p_in_y1,
+                           JSAMPROW p_in_cb, JSAMPROW p_in_cr,
+                           JSAMPROW p_out0, JSAMPROW p_out1,
+                           JDIMENSION out_width)
 {
   int y, cb, cr, cred, cgreen, cblue;
   JDIMENSION col, num_cols_mul_32 = out_width >> 5;
@@ -1790,10 +1774,10 @@ yuv_rgb_upsample_h2v2_msa(JSAMPROW p_in_y0, JSAMPROW p_in_y1,
 }
 
 void
-yuv_bgr_upsample_h2v2_msa(JSAMPROW p_in_y0, JSAMPROW p_in_y1,
-                          JSAMPROW p_in_cb, JSAMPROW p_in_cr,
-                          JSAMPROW p_out0, JSAMPROW p_out1,
-                          JDIMENSION out_width)
+yuv_bgr_upsample_h2v2_msa (JSAMPROW p_in_y0, JSAMPROW p_in_y1,
+                           JSAMPROW p_in_cb, JSAMPROW p_in_cr,
+                           JSAMPROW p_out0, JSAMPROW p_out1,
+                           JDIMENSION out_width)
 {
   int y, cb, cr, cred, cgreen, cblue;
   JDIMENSION col, num_cols_mul_32 = out_width >> 5;
@@ -2085,10 +2069,10 @@ yuv_bgr_upsample_h2v2_msa(JSAMPROW p_in_y0, JSAMPROW p_in_y1,
 }
 
 void
-yuv_rgba_upsample_h2v2_msa(JSAMPROW p_in_y0, JSAMPROW p_in_y1,
-                           JSAMPROW p_in_cb, JSAMPROW p_in_cr,
-                           JSAMPROW p_out0, JSAMPROW p_out1,
-                           JDIMENSION out_width)
+yuv_rgba_upsample_h2v2_msa (JSAMPROW p_in_y0, JSAMPROW p_in_y1,
+                            JSAMPROW p_in_cb, JSAMPROW p_in_cr,
+                            JSAMPROW p_out0, JSAMPROW p_out1,
+                            JDIMENSION out_width)
 {
   int y, cb, cr, cred, cgreen, cblue;
   JDIMENSION col, num_cols_mul_32 = out_width >> 5;
@@ -2348,10 +2332,10 @@ yuv_rgba_upsample_h2v2_msa(JSAMPROW p_in_y0, JSAMPROW p_in_y1,
 }
 
 void
-yuv_bgra_upsample_h2v2_msa(JSAMPROW p_in_y0, JSAMPROW p_in_y1,
-                           JSAMPROW p_in_cb, JSAMPROW p_in_cr,
-                           JSAMPROW p_out0, JSAMPROW p_out1,
-                           JDIMENSION out_width)
+yuv_bgra_upsample_h2v2_msa (JSAMPROW p_in_y0, JSAMPROW p_in_y1,
+                            JSAMPROW p_in_cb, JSAMPROW p_in_cr,
+                            JSAMPROW p_out0, JSAMPROW p_out1,
+                            JDIMENSION out_width)
 {
   int y, cb, cr, cred, cgreen, cblue;
   JDIMENSION col, num_cols_mul_32 = out_width >> 5;
@@ -2611,10 +2595,10 @@ yuv_bgra_upsample_h2v2_msa(JSAMPROW p_in_y0, JSAMPROW p_in_y1,
 }
 
 void
-yuv_argb_upsample_h2v2_msa(JSAMPROW p_in_y0, JSAMPROW p_in_y1,
-                           JSAMPROW p_in_cb, JSAMPROW p_in_cr,
-                           JSAMPROW p_out0, JSAMPROW p_out1,
-                           JDIMENSION out_width)
+yuv_argb_upsample_h2v2_msa (JSAMPROW p_in_y0, JSAMPROW p_in_y1,
+                            JSAMPROW p_in_cb, JSAMPROW p_in_cr,
+                            JSAMPROW p_out0, JSAMPROW p_out1,
+                            JDIMENSION out_width)
 {
   int y, cb, cr, cred, cgreen, cblue;
   JDIMENSION col, num_cols_mul_32 = out_width >> 5;
@@ -2874,10 +2858,10 @@ yuv_argb_upsample_h2v2_msa(JSAMPROW p_in_y0, JSAMPROW p_in_y1,
 }
 
 void
-yuv_abgr_upsample_h2v2_msa(JSAMPROW p_in_y0, JSAMPROW p_in_y1,
-                           JSAMPROW p_in_cb, JSAMPROW p_in_cr,
-                           JSAMPROW p_out0, JSAMPROW p_out1,
-                           JDIMENSION out_width)
+yuv_abgr_upsample_h2v2_msa (JSAMPROW p_in_y0, JSAMPROW p_in_y1,
+                            JSAMPROW p_in_cb, JSAMPROW p_in_cr,
+                            JSAMPROW p_out0, JSAMPROW p_out1,
+                            JDIMENSION out_width)
 {
   int y, cb, cr, cred, cgreen, cblue;
   JDIMENSION col, num_cols_mul_32 = out_width >> 5;
