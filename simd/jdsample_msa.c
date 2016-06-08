@@ -170,8 +170,8 @@ image_upsample_fancy_h2v1_msa (JSAMPARRAY src, JSAMPARRAY dst,
 
   for (row = 0; row < height; row++) {
     /* Prepare first 16 width column */
-    src1 = LD_SB(src);
-    src2 = LD_SB(src + 16);
+    src1 = LD_SB(src[row]);
+    src2 = LD_SB(src[row] + 16);
     src0 = __msa_splati_b(src1, 0);
 
     for (col = 0; col < width; col += 16) {
@@ -196,20 +196,16 @@ image_upsample_fancy_h2v1_msa (JSAMPARRAY src, JSAMPARRAY dst,
       PCKEV_B2_SB(left_l, left_r, right_l, right_r, left, right);
       ILVRL_B2_SB(right, left, out0, out1);
 
-      ST_SB2(out0, out1, dst + (col << 1), 16);
+      ST_SB2(out0, out1, dst[row] + (col << 1), 16);
 
       /* Prepare for next 16 width column */
       src0 = src1;
       src1 = src2;
-      src2 = LD_SB(src + col + 32);
+      src2 = LD_SB(src[row] + col + 32);
     }
 
     /* Re-substitute last pixel */
-    dst[2 * width - 1] = src[width - 1];
-
-    /* Advance src and dst pointers */
-    src += width;
-    dst += 2 * width;
+    *(dst[row] + 2 * width - 1) = *(src[row] + width - 1);
   }
 }
 
