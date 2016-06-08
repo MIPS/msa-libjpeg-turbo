@@ -456,6 +456,9 @@ jsimd_can_h2v2_merged_upsample (void)
   if (sizeof(JDIMENSION) != 4)
     return 0;
 
+  if (simd_support & JSIMD_MSA)
+    return 1;
+
   return 0;
 }
 
@@ -469,6 +472,9 @@ jsimd_can_h2v1_merged_upsample (void)
   if (sizeof(JDIMENSION) != 4)
     return 0;
 
+  if (simd_support & JSIMD_MSA)
+    return 1;
+
   return 0;
 }
 
@@ -478,6 +484,37 @@ jsimd_h2v2_merged_upsample (j_decompress_ptr cinfo,
                             JDIMENSION in_row_group_ctr,
                             JSAMPARRAY output_buf)
 {
+  void (*msafct)(JDIMENSION, JSAMPIMAGE, JDIMENSION, JSAMPARRAY);
+
+  switch(cinfo->out_color_space) {
+    case JCS_EXT_RGB:
+      msafct=jsimd_h2v2_extrgb_merged_upsample_msa;
+      break;
+    case JCS_EXT_RGBX:
+    case JCS_EXT_RGBA:
+      msafct=jsimd_h2v2_extrgbx_merged_upsample_msa;
+      break;
+    case JCS_EXT_BGR:
+      msafct=jsimd_h2v2_extbgr_merged_upsample_msa;
+      break;
+    case JCS_EXT_BGRX:
+    case JCS_EXT_BGRA:
+      msafct=jsimd_h2v2_extbgrx_merged_upsample_msa;
+      break;
+    case JCS_EXT_XBGR:
+    case JCS_EXT_ABGR:
+      msafct=jsimd_h2v2_extxbgr_merged_upsample_msa;
+      break;
+    case JCS_EXT_XRGB:
+    case JCS_EXT_ARGB:
+      msafct=jsimd_h2v2_extxrgb_merged_upsample_msa;
+      break;
+    default:
+      msafct=jsimd_h2v2_merged_upsample_msa;
+      break;
+  }
+
+  msafct(cinfo->output_width, input_buf, in_row_group_ctr, output_buf);
 }
 
 GLOBAL(void)
@@ -486,6 +523,37 @@ jsimd_h2v1_merged_upsample (j_decompress_ptr cinfo,
                             JDIMENSION in_row_group_ctr,
                             JSAMPARRAY output_buf)
 {
+  void (*msafct)(JDIMENSION, JSAMPIMAGE, JDIMENSION, JSAMPARRAY);
+
+  switch(cinfo->out_color_space) {
+    case JCS_EXT_RGB:
+      msafct=jsimd_h2v1_extrgb_merged_upsample_msa;
+      break;
+    case JCS_EXT_RGBX:
+    case JCS_EXT_RGBA:
+      msafct=jsimd_h2v1_extrgbx_merged_upsample_msa;
+      break;
+    case JCS_EXT_BGR:
+      msafct=jsimd_h2v1_extbgr_merged_upsample_msa;
+      break;
+    case JCS_EXT_BGRX:
+    case JCS_EXT_BGRA:
+      msafct=jsimd_h2v1_extbgrx_merged_upsample_msa;
+      break;
+    case JCS_EXT_XBGR:
+    case JCS_EXT_ABGR:
+      msafct=jsimd_h2v1_extxbgr_merged_upsample_msa;
+      break;
+    case JCS_EXT_XRGB:
+    case JCS_EXT_ARGB:
+      msafct=jsimd_h2v1_extxrgb_merged_upsample_msa;
+      break;
+    default:
+      msafct=jsimd_h2v1_merged_upsample_msa;
+      break;
+  }
+
+  msafct(cinfo->output_width, input_buf, in_row_group_ctr, output_buf);
 }
 
 GLOBAL(int)
