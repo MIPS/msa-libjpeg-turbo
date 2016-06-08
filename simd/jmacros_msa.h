@@ -209,6 +209,7 @@
   out1 = LD_B(RTYPE, (psrc) + stride);            \
 }
 #define LD_UB2(...) LD_B2(v16u8, __VA_ARGS__)
+#define LD_SB2(...) LD_B2(v16i8, __VA_ARGS__)
 
 /* Description : Load vectors with 8 halfword elements with stride
    Arguments   : Inputs  - psrc, stride
@@ -259,6 +260,13 @@
   ST_B2(RTYPE, in2, in3, (pdst) + 2 * stride, stride);    \
 }
 #define ST_UB4(...) ST_B4(v16u8, __VA_ARGS__)
+
+#define ST_B8(RTYPE, in0, in1, in2, in3, in4, in5, in6, in7,      \
+              pdst, stride) {                                     \
+  ST_B4(RTYPE, in0, in1, in2, in3, pdst, stride);                 \
+  ST_B4(RTYPE, in4, in5, in6, in7, (pdst) + 4 * stride, stride);  \
+}
+#define ST_UB8(...) ST_B8(v16u8, __VA_ARGS__)
 
 /* Description : Store vectors of 8 halfword elements with stride
    Arguments   : Inputs - in0, in1, pdst, stride
@@ -398,6 +406,10 @@
 #define CLIP_SH2_0_255(in0, in1) {  \
   in0 = CLIP_SH_0_255(in0);         \
   in1 = CLIP_SH_0_255(in1);         \
+}
+#define CLIP_SH4_0_255(in0, in1, in2, in3) {  \
+  CLIP_SH2_0_255(in0, in1);                   \
+  CLIP_SH2_0_255(in2, in3);                   \
 }
 
 /* Description : Clips all signed word elements of input vector
