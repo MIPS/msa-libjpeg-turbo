@@ -57,6 +57,127 @@
 
 #define ST_H(RTYPE, in, pdst) *((RTYPE *)(pdst)) = (in)
 
+#ifdef CLANG_BUILD
+  #define LH(psrc) ( {                                    \
+    unsigned char *psrc_lh_m = (unsigned char *) (psrc);  \
+    unsigned short val_m;                                 \
+                                                          \
+    asm volatile (                                        \
+      "lh  %[val_m],  %[psrc_lh_m]  \n\t"                 \
+                                                          \
+      : [val_m] "=r" (val_m)                              \
+      : [psrc_lh_m] "m" (*psrc_lh_m)                      \
+    );                                                    \
+                                                          \
+    val_m;                                                \
+  } )
+
+  #define LW(psrc) ( {                                    \
+    unsigned char *psrc_lw_m = (unsigned char *) (psrc);  \
+    unsigned int val_m;                                   \
+                                                          \
+    asm volatile (                                        \
+      "lw  %[val_m],  %[psrc_lw_m]  \n\t"                 \
+                                                          \
+      : [val_m] "=r" (val_m)                              \
+      : [psrc_lw_m] "m" (*psrc_lw_m)                      \
+    );                                                    \
+                                                          \
+    val_m;                                                \
+  } )
+
+  #if (__mips == 64)
+    #define LD(psrc) ( {                                    \
+      unsigned char *psrc_ld_m = (unsigned char *) (psrc);  \
+      uint64_t val_m = 0;                                   \
+                                                            \
+      asm volatile (                                        \
+        "ld  %[val_m],  %[psrc_ld_m]  \n\t"                 \
+                                                            \
+        : [val_m] "=r" (val_m)                              \
+        : [psrc_ld_m] "m" (*psrc_ld_m)                      \
+      );                                                    \
+                                                            \
+      val_m;                                                \
+    } )
+  #else  // !(__mips == 64)
+    #define LD(psrc) ( {                                        \
+      unsigned char *psrc_ld_m = (unsigned char *) (psrc);      \
+      unsigned int val0_m, val1_m;                              \
+      uint64_t val_m = 0;                                       \
+                                                                \
+      val0_m = LW(psrc_ld_m);                                   \
+      val1_m = LW(psrc_ld_m + 4);                               \
+                                                                \
+      val_m = (uint64_t) (val1_m);                              \
+      val_m = (uint64_t) ((val_m << 32) & 0xFFFFFFFF00000000);  \
+      val_m = (uint64_t) (val_m | (uint64_t) val0_m);           \
+                                                                \
+      val_m;                                                    \
+    } )
+  #endif  // (__mips == 64)
+
+  #define SH(val, pdst) {                                 \
+    unsigned char *pdst_sh_m = (unsigned char *) (pdst);  \
+    unsigned short val_m = (val);                         \
+                                                          \
+    asm volatile (                                        \
+      "sh  %[val_m],  %[pdst_sh_m]  \n\t"                 \
+                                                          \
+      : [pdst_sh_m] "=m" (*pdst_sh_m)                     \
+      : [val_m] "r" (val_m)                               \
+    );                                                    \
+  }
+
+  #define SW(val, pdst) {                                 \
+    unsigned char *pdst_sw_m = (unsigned char *) (pdst);  \
+    unsigned int val_m = (val);                           \
+                                                          \
+    asm volatile (                                        \
+      "sw  %[val_m],  %[pdst_sw_m]  \n\t"                 \
+                                                          \
+      : [pdst_sw_m] "=m" (*pdst_sw_m)                     \
+      : [val_m] "r" (val_m)                               \
+    );                                                    \
+  }
+
+  #if (__mips == 64)
+    #define SD(val, pdst) {                                 \
+      unsigned char *pdst_sd_m = (unsigned char *) (pdst);  \
+      uint64_t val_m = (val);                               \
+                                                            \
+      asm volatile (                                        \
+        "sd  %[val_m],  %[pdst_sd_m]  \n\t"                 \
+                                                            \
+        : [pdst_sd_m] "=m" (*pdst_sd_m)                     \
+        : [val_m] "r" (val_m)                               \
+      );                                                    \
+    }
+  #else
+    #define SD(val, pdst) {                                          \
+      unsigned char *pdst_sd_m = (unsigned char *) (pdst);           \
+      unsigned int val0_m, val1_m;                                   \
+                                                                     \
+      val0_m = (unsigned int) ((val) & 0x00000000FFFFFFFF);          \
+      val1_m = (unsigned int) (((val) >> 32) & 0x00000000FFFFFFFF);  \
+                                                                     \
+      SW(val0_m, pdst_sd_m);                                         \
+      SW(val1_m, pdst_sd_m + 4);                                     \
+    }
+  #endif
+
+  #define SW_ZERO(pdst)                                \
+  {                                                    \
+    unsigned char *pdst_m = (unsigned char *) (pdst);  \
+                                                       \
+    asm volatile (                                     \
+      "sw  $0,  %[pdst_m]  \n\t"                       \
+                                                       \
+      : [pdst_m] "=m" (*pdst_m)                        \
+      :                                                \
+    );                                                 \
+  }
+#else
 #if (__mips_isa_rev >= 6)
   #define LW(psrc) ( {                                    \
     unsigned char *psrc_lw_m = (unsigned char *) (psrc);  \
@@ -196,6 +317,7 @@
     SW(val1_m, pdst_sd_m + 4);                                     \
   }
 #endif  // (__mips_isa_rev >= 6)
+#endif
 
 /* Description : Load vectors with 16 byte elements with stride
    Arguments   : Inputs  - psrc, stride
