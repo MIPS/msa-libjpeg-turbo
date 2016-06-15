@@ -54,6 +54,7 @@
 
 #define ST_B(RTYPE, in, pdst) *((RTYPE *)(pdst)) = (in)
 #define ST_UB(...) ST_B(v16u8, __VA_ARGS__)
+#define ST_SB(...) ST_B(v16i8, __VA_ARGS__)
 
 #define ST_H(RTYPE, in, pdst) *((RTYPE *)(pdst)) = (in)
 
@@ -278,7 +279,7 @@
       val_m;                                                \
     } )
   #else  // !(__mips == 64)
-    #define LD(psrc) ( {                                                  \
+    #define LD(psrc) ( {                                                   \
       unsigned char *psrc_ld_m = (unsigned char *) (psrc);                 \
       unsigned int val0_m, val1_m;                                         \
       unsigned long long val_m = 0;                                        \
@@ -333,6 +334,19 @@
 #define LD_UB2(...) LD_B2(v16u8, __VA_ARGS__)
 #define LD_SB2(...) LD_B2(v16i8, __VA_ARGS__)
 
+#define LD_B4(RTYPE, psrc, stride, out0, out1, out2, out3) {  \
+  LD_B2(RTYPE, (psrc), stride, out0, out1);                   \
+  LD_B2(RTYPE, (psrc) + 2 * stride , stride, out2, out3);     \
+}
+#define LD_SB4(...) LD_B4(v16i8, __VA_ARGS__)
+
+#define LD_B8(RTYPE, psrc, stride,                                    \
+              out0, out1, out2, out3, out4, out5, out6, out7) {       \
+  LD_B4(RTYPE, (psrc), stride, out0, out1, out2, out3);               \
+  LD_B4(RTYPE, (psrc) + 4 * stride, stride, out4, out5, out6, out7);  \
+}
+#define LD_SB8(...) LD_B8(v16i8, __VA_ARGS__)
+
 /* Description : Load vectors with 8 halfword elements with stride
    Arguments   : Inputs  - psrc, stride
                  Outputs - out0, out1
@@ -382,6 +396,7 @@
   ST_B2(RTYPE, in2, in3, (pdst) + 2 * stride, stride);    \
 }
 #define ST_UB4(...) ST_B4(v16u8, __VA_ARGS__)
+#define ST_SB4(...) ST_B4(v16i8, __VA_ARGS__)
 
 #define ST_B8(RTYPE, in0, in1, in2, in3, in4, in5, in6, in7,      \
               pdst, stride) {                                     \
@@ -548,6 +563,26 @@
   out_m = __msa_min_s_w((v4i32) max_m, (v4i32) out_m);  \
   out_m;                                                \
 } )
+
+/* Description : Horizontal addition of unsigned byte vector elements
+   Arguments   : Inputs  - in0, in1
+                 Outputs - out0, out1
+                 Return Type - as per RTYPE
+   Details     : Each unsigned odd byte element from 'in0' is added to
+                 even unsigned byte element from 'in0' (pairwise) and the
+                 halfword result is written to 'out0'
+*/
+#define HADD_UB2(RTYPE, in0, in1, out0, out1) {             \
+  out0 = (RTYPE) __msa_hadd_u_h((v16u8) in0, (v16u8) in0);  \
+  out1 = (RTYPE) __msa_hadd_u_h((v16u8) in1, (v16u8) in1);  \
+}
+#define HADD_UB2_SH(...) HADD_UB2(v8i16, __VA_ARGS__)
+
+#define HADD_UB4(RTYPE, in0, in1, in2, in3, out0, out1, out2, out3) {  \
+  HADD_UB2(RTYPE, in0, in1, out0, out1);                               \
+  HADD_UB2(RTYPE, in2, in3, out2, out3);                               \
+}
+#define HADD_UB4_SH(...) HADD_UB4(v8i16, __VA_ARGS__)
 
 /* Description : Horizontal subtraction of unsigned byte vector elements
    Arguments   : Inputs  - in0, in1
@@ -802,6 +837,8 @@
   in0 = (RTYPE) __msa_srai_h((v8i16) in0, shift);  \
   in1 = (RTYPE) __msa_srai_h((v8i16) in1, shift);  \
 }
+#define SRAI_H2_SH(...) SRAI_H2(v8i16, __VA_ARGS__)
+
 #define SRAI_H4(RTYPE, in0, in1, in2, in3, shift) {  \
   SRAI_H2(RTYPE, in0, in1, shift);                   \
   SRAI_H2(RTYPE, in2, in3, shift);                   \
