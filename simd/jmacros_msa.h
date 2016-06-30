@@ -334,17 +334,31 @@
 #define LD_UB2(...) LD_B2(v16u8, __VA_ARGS__)
 #define LD_SB2(...) LD_B2(v16i8, __VA_ARGS__)
 
+#define LD_B3(RTYPE, psrc, stride, out0, out1, out2) {  \
+  LD_B2(RTYPE, (psrc), stride, out0, out1);             \
+  out2 = LD_B(RTYPE, (psrc) + 2 * stride);              \
+}
+#define LD_UB3(...) LD_B3(v16u8, __VA_ARGS__)
+
 #define LD_B4(RTYPE, psrc, stride, out0, out1, out2, out3) {  \
   LD_B2(RTYPE, (psrc), stride, out0, out1);                   \
   LD_B2(RTYPE, (psrc) + 2 * stride , stride, out2, out3);     \
 }
+#define LD_UB4(...) LD_B4(v16u8, __VA_ARGS__)
 #define LD_SB4(...) LD_B4(v16i8, __VA_ARGS__)
+
+#define LD_B6(RTYPE, psrc, stride, out0, out1, out2, out3, out4, out5) {  \
+  LD_B4(RTYPE, (psrc), stride, out0, out1, out2, out3);                   \
+  LD_B2(RTYPE, (psrc) + 4 * stride, stride, out4, out5);                  \
+}
+#define LD_UB6(...) LD_B6(v16u8, __VA_ARGS__)
 
 #define LD_B8(RTYPE, psrc, stride,                                    \
               out0, out1, out2, out3, out4, out5, out6, out7) {       \
   LD_B4(RTYPE, (psrc), stride, out0, out1, out2, out3);               \
   LD_B4(RTYPE, (psrc) + 4 * stride, stride, out4, out5, out6, out7);  \
 }
+#define LD_UB8(...) LD_B8(v16u8, __VA_ARGS__)
 #define LD_SB8(...) LD_B8(v16i8, __VA_ARGS__)
 
 /* Description : Load vectors with 8 halfword elements with stride
@@ -449,6 +463,19 @@
   out0 = (RTYPE) __msa_sldi_b((v16i8) zero_m, (v16i8) in0, slide_val);  \
   out1 = (RTYPE) __msa_sldi_b((v16i8) zero_m, (v16i8) in1, slide_val);  \
 }
+
+/* Description : Immediate number of elements to slide
+   Arguments   : Inputs  - in0_0, in0_1, in1_0, in1_1, slide_val
+                 Outputs - out0, out1
+                 Return Type - as per RTYPE
+   Details     : Byte elements from 'in0_0' vector are slid into 'in1_0' by
+                 value specified in the 'slide_val'
+*/
+#define SLDI_B2(RTYPE, in0_0, in0_1, in1_0, in1_1, out0, out1, slide_val) {  \
+  out0 = (RTYPE) __msa_sldi_b((v16i8) in0_0, (v16i8) in1_0, slide_val);      \
+  out1 = (RTYPE) __msa_sldi_b((v16i8) in0_1, (v16i8) in1_1, slide_val);      \
+}
+#define SLDI_B2_UB(...) SLDI_B2(v16u8, __VA_ARGS__)
 
 /* Description : Shuffle byte vector elements as per mask vector
    Arguments   : Inputs  - in0, in1, in2, in3, mask0, mask1
