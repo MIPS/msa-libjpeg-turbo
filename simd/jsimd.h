@@ -402,6 +402,9 @@ EXTERN(void) jsimd_ycc_extxbgr_convert_msa
 EXTERN(void) jsimd_ycc_extxrgb_convert_msa
         (JDIMENSION out_width, JSAMPIMAGE input_buf, JDIMENSION input_row,
          JSAMPARRAY output_buf, int num_rows);
+EXTERN(void) jsimd_ycc_rgb565_convert_msa
+        (JDIMENSION out_width, JSAMPIMAGE input_buf, JDIMENSION input_row,
+         JSAMPARRAY output_buf, int num_rows);
 
 EXTERN(void) jsimd_ycc_rgb_convert_altivec
         (JDIMENSION out_width, JSAMPIMAGE input_buf, JDIMENSION input_row,

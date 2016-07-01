@@ -135,6 +135,15 @@ jsimd_can_ycc_rgb (void)
 GLOBAL(int)
 jsimd_can_ycc_rgb565 (void)
 {
+  /* The code is optimised for these values only */
+  if (BITS_IN_JSAMPLE != 8)
+    return 0;
+  if (sizeof(JDIMENSION) != 4)
+    return 0;
+
+  if (simd_support & JSIMD_MSA)
+    return 1;
+
   return 0;
 }
 
@@ -276,6 +285,8 @@ jsimd_ycc_rgb565_convert (j_decompress_ptr cinfo,
                           JSAMPIMAGE input_buf, JDIMENSION input_row,
                           JSAMPARRAY output_buf, int num_rows)
 {
+  jsimd_ycc_rgb565_convert_msa(cinfo->output_width, input_buf, input_row,
+                               output_buf, num_rows);
 }
 
 GLOBAL(void)
