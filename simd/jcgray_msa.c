@@ -50,7 +50,7 @@ rgb_grey_convert_msa (JSAMPROW inptr, JSAMPROW p_out_y, JDIMENSION width)
                           29, 30};
   const v16i8 gb1_mask = {9, 10, 12, 13, 15, 16, 18, 19, 21, 22, 24, 25, 27, 28,
                           30, 31};
-  const v8i16 const0 = {19595, 16384, 22086, 7471, };
+  const v8i16 const0 = {19595, 16384, 22086, 7471, 0, 0, 0, 0};
 
   col = 0;
 
@@ -200,7 +200,7 @@ bgr_grey_convert_msa (JSAMPROW inptr, JSAMPROW p_out_y, JDIMENSION width)
                           29, 30};
   const v16i8 gr1_mask = {9, 10, 12, 13, 15, 16, 18, 19, 21, 22, 24, 25, 27, 28,
                           30, 31};
-  const v8i16 const0 = {7471, 22086, 16384, 19595, };
+  const v8i16 const0 = {7471, 22086, 16384, 19595, 0, 0, 0, 0};
 
   col = 0;
 
@@ -342,7 +342,7 @@ rgbx_grey_convert_msa (JSAMPROW inptr, JSAMPROW p_out_y, JDIMENSION width)
   v8i16 rg0, gb0, rg1, gb1, mult, zero = {0};
   v8i16 rg0_r, gb0_r, rg1_r, gb1_r, rg0_l, gb0_l, rg1_l, gb1_l;
   v4i32 tmp0, tmp1, tmp2, tmp3;
-  const v8i16 const0 = {19595, 16384, 22086, 7471, };
+  const v8i16 const0 = {19595, 16384, 22086, 7471, 0, 0, 0, 0};
 
   col = 0;
 
@@ -497,7 +497,7 @@ bgrx_grey_convert_msa (JSAMPROW inptr, JSAMPROW p_out_y, JDIMENSION width)
   v8i16 bg0, gr0, bg1, gr1, mult, zero = {0};
   v8i16 bg0_r, gr0_r, bg1_r, gr1_r, bg0_l, gr0_l, bg1_l, gr1_l;
   v4i32 tmp0, tmp1, tmp2, tmp3;
-  const v8i16 const0 = {7471, 22086, 16384, 19595, };
+  const v8i16 const0 = {7471, 22086, 16384, 19595, 0, 0, 0, 0};
 
   col = 0;
 
@@ -653,7 +653,7 @@ xrgb_grey_convert_msa (JSAMPROW inptr, JSAMPROW p_out_y, JDIMENSION width)
   v8i16 rg0, gb0, rg1, gb1, mult, zero = {0};
   v8i16 rg0_r, gb0_r, rg1_r, gb1_r, rg0_l, gb0_l, rg1_l, gb1_l;
   v4i32 tmp0, tmp1, tmp2, tmp3;
-  const v8i16 const0 = {19595, 16384, 22086, 7471, };
+  const v8i16 const0 = {19595, 16384, 22086, 7471, 0, 0, 0, 0};
 
   col = 0;
 
@@ -810,7 +810,7 @@ xbgr_grey_convert_msa (JSAMPROW inptr, JSAMPROW p_out_y, JDIMENSION width)
   v8i16 bg0, gr0, bg1, gr1, mult, zero = {0};
   v8i16 bg0_r, gr0_r, bg1_r, gr1_r, bg0_l, gr0_l, bg1_l, gr1_l;
   v4i32 tmp0, tmp1, tmp2, tmp3;
-  const v8i16 const0 = {7471, 22086, 16384, 19595, };
+  const v8i16 const0 = {7471, 22086, 16384, 19595, 0, 0, 0, 0};
 
   col = 0;
 
@@ -963,11 +963,10 @@ jsimd_rgb_gray_convert_msa (JDIMENSION img_width, JSAMPARRAY input_buf,
                             JSAMPIMAGE output_buf, JDIMENSION output_row,
                             int num_rows)
 {
-  register JSAMPROW inptr;
-  register JSAMPROW p_out_y;
-  while(--num_rows >= 0) {
+  JSAMPROW inptr;
+  JSAMPROW p_out_y = output_buf[0][output_row];
+  while (--num_rows >= 0) {
     inptr = *input_buf++;
-    p_out_y = output_buf[0][output_row];
     rgb_grey_convert_msa(inptr, p_out_y, img_width);
   }
 }
@@ -977,11 +976,10 @@ jsimd_extrgb_gray_convert_msa (JDIMENSION img_width, JSAMPARRAY input_buf,
                                JSAMPIMAGE output_buf, JDIMENSION output_row,
                                int num_rows)
 {
-  register JSAMPROW inptr;
-  register JSAMPROW p_out_y;
-  while(--num_rows >= 0) {
+  JSAMPROW inptr;
+  JSAMPROW p_out_y = output_buf[0][output_row];
+  while (--num_rows >= 0) {
     inptr = *input_buf++;
-    p_out_y = output_buf[0][output_row];
     rgb_grey_convert_msa(inptr, p_out_y, img_width);
   }
 }
@@ -991,11 +989,10 @@ jsimd_extrgbx_gray_convert_msa (JDIMENSION img_width, JSAMPARRAY input_buf,
                                 JSAMPIMAGE output_buf, JDIMENSION output_row,
                                 int num_rows)
 {
-  register JSAMPROW inptr;
-  register JSAMPROW p_out_y;
-  while(--num_rows >= 0) {
+  JSAMPROW inptr;
+  JSAMPROW p_out_y = output_buf[0][output_row];
+  while (--num_rows >= 0) {
     inptr = *input_buf++;
-    p_out_y = output_buf[0][output_row];
     rgbx_grey_convert_msa(inptr, p_out_y, img_width);
   }
 }
@@ -1005,11 +1002,10 @@ jsimd_extbgr_gray_convert_msa (JDIMENSION img_width, JSAMPARRAY input_buf,
                                JSAMPIMAGE output_buf, JDIMENSION output_row,
                                int num_rows)
 {
-  register JSAMPROW inptr;
-  register JSAMPROW p_out_y;
-  while(--num_rows >= 0) {
+  JSAMPROW inptr;
+  JSAMPROW p_out_y = output_buf[0][output_row];
+  while (--num_rows >= 0) {
     inptr = *input_buf++;
-    p_out_y = output_buf[0][output_row];
     bgr_grey_convert_msa(inptr, p_out_y, img_width);
   }
 }
@@ -1019,11 +1015,10 @@ jsimd_extbgrx_gray_convert_msa (JDIMENSION img_width, JSAMPARRAY input_buf,
                                 JSAMPIMAGE output_buf, JDIMENSION output_row,
                                 int num_rows)
 {
-  register JSAMPROW inptr;
-  register JSAMPROW p_out_y;
-  while(--num_rows >= 0) {
+  JSAMPROW inptr;
+  JSAMPROW p_out_y = output_buf[0][output_row];
+  while (--num_rows >= 0) {
       inptr = *input_buf++;
-      p_out_y = output_buf[0][output_row];
       bgrx_grey_convert_msa(inptr, p_out_y, img_width);
   }
 }
@@ -1033,11 +1028,10 @@ jsimd_extxbgr_gray_convert_msa (JDIMENSION img_width, JSAMPARRAY input_buf,
                             JSAMPIMAGE output_buf, JDIMENSION output_row,
                             int num_rows)
 {
-  register JSAMPROW inptr;
-  register JSAMPROW p_out_y;
-  while(--num_rows >= 0) {
+  JSAMPROW inptr;
+  JSAMPROW p_out_y = output_buf[0][output_row];
+  while (--num_rows >= 0) {
     inptr = *input_buf++;
-    p_out_y = output_buf[0][output_row];
     xbgr_grey_convert_msa(inptr, p_out_y, img_width);
   }
 }
@@ -1047,11 +1041,10 @@ jsimd_extxrgb_gray_convert_msa (JDIMENSION img_width, JSAMPARRAY input_buf,
                                 JSAMPIMAGE output_buf, JDIMENSION output_row,
                                 int num_rows)
 {
-  register JSAMPROW inptr;
-  register JSAMPROW p_out_y;
-  while(--num_rows >= 0) {
+  JSAMPROW inptr;
+  JSAMPROW p_out_y = output_buf[0][output_row];
+  while (--num_rows >= 0) {
     inptr = *input_buf++;
-    p_out_y = output_buf[0][output_row];
     xrgb_grey_convert_msa(inptr, p_out_y, img_width);
   }
 }
