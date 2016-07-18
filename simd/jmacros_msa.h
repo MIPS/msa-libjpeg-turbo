@@ -900,6 +900,20 @@
                  shifted value for rounding and the result is written in-place.
                  'shift' is an immediate value.
 */
+#define SRARI_H2(RTYPE, in0, in1, shift) {         \
+  in0 = (RTYPE) __msa_srari_h((v8i16)in0, shift);  \
+  in1 = (RTYPE) __msa_srari_h((v8i16)in1, shift);  \
+}
+#define SRARI_H2_UH(...) SRARI_H2(v8u16, __VA_ARGS__)
+#define SRARI_H2_SH(...) SRARI_H2(v8i16, __VA_ARGS__)
+
+#define SRARI_H4(RTYPE, in0, in1, in2, in3, shift) {  \
+  SRARI_H2(RTYPE, in0, in1, shift);                   \
+  SRARI_H2(RTYPE, in2, in3, shift);                   \
+}
+#define SRARI_H4_UH(...) SRARI_H4(v8u16, __VA_ARGS__)
+#define SRARI_H4_SH(...) SRARI_H4(v8i16, __VA_ARGS__)
+
 #define SRARI_W2(RTYPE, in0, in1, shift) {          \
   in0 = (RTYPE) __msa_srari_w((v4i32) in0, shift);  \
   in1 = (RTYPE) __msa_srari_w((v4i32) in1, shift);  \

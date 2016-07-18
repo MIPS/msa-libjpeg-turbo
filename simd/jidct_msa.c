@@ -401,7 +401,7 @@ idct_ifast_msa (JCOEFPTR quantptr, JCOEFPTR block, JSAMPARRAY output_buf)
   v8i16 dst0, dst1, dst2, dst3, dst4, dst5, dst6, dst7;
   v8i16 quant0, quant1, quant2, quant3, quant4, quant5, quant6, quant7;
   v8i16 tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7;
-  v8i16 tmp10, tmp11, tmp12, tmp13;
+  v8i16 tmp10, tmp11, tmp12, tmp13, tmp14;
   v8i16 z5, z10, z11, z12, z13;
   v4i32 z5_r, z5_l, z12_r, z12_l, z10_r, z10_l, z11_r, z11_l;
   v4i32 tmp11_r, tmp11_l, tmp12_r, tmp12_l, tmp13_l, tmp13_r;
@@ -436,32 +436,24 @@ idct_ifast_msa (JCOEFPTR quantptr, JCOEFPTR block, JSAMPARRAY output_buf)
     BUTTERFLY_4(val0, val2, val6, val4, tmp10, tmp13, tmp12, tmp11);
 
     tmp = __msa_splati_w(const0, 0);
-    UNPCK_SH_SW(val2, tmp12_r, tmp12_l);
-    UNPCK_SH_SW(val6, tmp13_r, tmp13_l);
-    SUB2(tmp12_r, tmp13_r, tmp12_l, tmp13_l, tmp12_r, tmp12_l);
-    UNPCK_SH_SW(tmp13, tmp13_r, tmp13_l);
+    tmp14 = val2 - val6;
+    UNPCK_SH_SW(tmp14, tmp12_r, tmp12_l);
     MUL2(tmp12_r, tmp, tmp12_l, tmp, tmp12_r, tmp12_l);
     tmp12_r = MSA_SRAI_W(tmp12_r, CONST_BITS_FAST);
     tmp12_l = MSA_SRAI_W(tmp12_l, CONST_BITS_FAST);
-    SUB2(tmp12_r, tmp13_r, tmp12_l, tmp13_l, tmp12_r, tmp12_l);
     tmp12 = __msa_pckev_h((v8i16) tmp12_l, (v8i16) tmp12_r);
+    tmp12 = tmp12 - tmp13;
 
     BUTTERFLY_4(tmp10, tmp11, tmp12, tmp13, tmp0, tmp1, tmp2, tmp3);
 
     /* Odd Part */
-    /* z13 = tmp6 + tmp5; */          /* phase 6 */
-    /* z10 = tmp6 - tmp5; */
-    /* z11 = tmp4 + tmp7; */
-    /* z12 = tmp4 - tmp7; */
-
     BUTTERFLY_4(val5, val1, val7, val3, z13, z11, z12, z10);
 
     tmp7 = z11 + z13;
 
     /* tmp11 = MULTIPLY(z11 - z13, FIX_1_414213562); */
-    UNPCK_SH_SW(z11, z11_r, z11_l);
-    UNPCK_SH_SW(z13, tmp11_r, tmp11_l);
-    SUB2(z11_r, tmp11_r, z11_l, tmp11_l, tmp11_r, tmp11_l);
+    tmp14 = z11 - z13;
+    UNPCK_SH_SW(tmp14, tmp11_r, tmp11_l);
     MUL2(tmp11_r, tmp, tmp11_l, tmp, tmp11_r, tmp11_l);
     tmp11_r = MSA_SRAI_W(tmp11_r, CONST_BITS_FAST);
     tmp11_l = MSA_SRAI_W(tmp11_l, CONST_BITS_FAST);
@@ -469,13 +461,12 @@ idct_ifast_msa (JCOEFPTR quantptr, JCOEFPTR block, JSAMPARRAY output_buf)
 
     /* z5 = MULTIPLY(z10 + z12, FIX_1_847759065);  */
     tmp = __msa_splati_w(const0, 1);
-    UNPCK_SH_SW(z10, z5_r, z5_l);
-    UNPCK_SH_SW(z12, tmp11_r, tmp11_l);
-    /* tmp11 = z11 - z13; */
-    ADD2(z5_r, tmp11_r, z5_l, tmp11_l, z5_r, z5_l);
+    tmp14 = z10 + z12;
+    UNPCK_SH_SW(tmp14, z5_r, z5_l);
     MUL2(z5_r, tmp, z5_l, tmp, z5_r, z5_l);
     z5_r = MSA_SRAI_W(z5_r, CONST_BITS_FAST);
     z5_l = MSA_SRAI_W(z5_l, CONST_BITS_FAST);
+    z5 = __msa_pckev_h((v8i16) z5_l, (v8i16) z5_r);
 
     /* tmp10 = MULTIPLY(z12, FIX_1_082392200) - z5; */
     tmp = __msa_splati_w(const0, 2);
@@ -483,8 +474,8 @@ idct_ifast_msa (JCOEFPTR quantptr, JCOEFPTR block, JSAMPARRAY output_buf)
     MUL2(z12_r, tmp, z12_l, tmp, z12_r, z12_l);
     z12_r = MSA_SRAI_W(z12_r, CONST_BITS_FAST);
     z12_l = MSA_SRAI_W(z12_l, CONST_BITS_FAST);
-    SUB2(z12_r, z5_r, z12_l, z5_l, z12_r, z12_l);
     tmp10 = __msa_pckev_h((v8i16) z12_l, (v8i16) z12_r);
+    tmp10 -= z5;
 
     /* tmp12 = MULTIPLY(z10, - FIX_2_613125930) + z5; */
     tmp = __msa_splati_w(const0, 3);
@@ -492,8 +483,8 @@ idct_ifast_msa (JCOEFPTR quantptr, JCOEFPTR block, JSAMPARRAY output_buf)
     MUL2(z10_r, tmp, z10_l, tmp, z10_r, z10_l);
     z10_r = MSA_SRAI_W(z10_r, CONST_BITS_FAST);
     z10_l = MSA_SRAI_W(z10_l, CONST_BITS_FAST);
-    ADD2(z10_r, z5_r, z10_l, z5_l, z10_r, z10_l);
     tmp12 = __msa_pckev_h((v8i16) z10_l, (v8i16) z10_r);
+    tmp12 += z5;
 
     tmp6 = tmp12 - tmp7;        /* phase 2 */
     tmp5 = tmp11 - tmp6;
@@ -512,17 +503,13 @@ idct_ifast_msa (JCOEFPTR quantptr, JCOEFPTR block, JSAMPARRAY output_buf)
 
   /* tmp12 = MULTIPLY(dst2 - dst6, FIX_1_414213562) - tmp13;*/
   tmp = __msa_splati_w(const0, 0);
-  UNPCK_SH_SW(dst2, tmp12_r, tmp12_l);
-  UNPCK_SH_SW(dst6, tmp13_r, tmp13_l);
-  SUB2(tmp12_r, tmp13_r, tmp12_l, tmp13_l, tmp12_r, tmp12_l);
-  UNPCK_SH_SW(tmp13, tmp13_r, tmp13_l);
+  tmp14 = dst2 - dst6;
+  UNPCK_SH_SW(tmp14, tmp12_r, tmp12_l);
   MUL2(tmp12_r, tmp, tmp12_l, tmp, tmp12_r, tmp12_l);
-
   tmp12_r = MSA_SRAI_W(tmp12_r, CONST_BITS_FAST);
   tmp12_l = MSA_SRAI_W(tmp12_l, CONST_BITS_FAST);
-
-  SUB2(tmp12_r, tmp13_r, tmp12_l, tmp13_l, tmp12_r, tmp12_l);
   tmp12 = __msa_pckev_h((v8i16) tmp12_l, (v8i16) tmp12_r);
+  tmp12 = tmp12 - tmp13;
 
   BUTTERFLY_4(tmp10, tmp11, tmp12, tmp13, tmp0, tmp1, tmp2, tmp3);
 
@@ -530,70 +517,54 @@ idct_ifast_msa (JCOEFPTR quantptr, JCOEFPTR block, JSAMPARRAY output_buf)
   BUTTERFLY_4(dst5, dst1, dst7, dst3, z13, z11, z12, z10);
 
   tmp7 = z11 + z13;
-  /* tmp11 = MULTIPLY(z11 - z13, FIX_1_414213562); */
-  UNPCK_SH_SW(z11, tmp11_r, tmp11_l);
-  UNPCK_SH_SW(z13, tmp13_r, tmp13_l);
-  SUB2(tmp11_r, tmp13_r, tmp11_l, tmp13_l, tmp11_r, tmp11_l);
-  MUL2(tmp11_r, tmp, tmp11_l, tmp, tmp11_r, tmp11_l);
 
+  /* tmp11 = MULTIPLY(z11 - z13, FIX_1_414213562); */
+  tmp14 = z11 - z13;
+  UNPCK_SH_SW(tmp14, tmp11_r, tmp11_l);
+  MUL2(tmp11_r, tmp, tmp11_l, tmp, tmp11_r, tmp11_l);
   tmp11_r = MSA_SRAI_W(tmp11_r, CONST_BITS_FAST);
   tmp11_l = MSA_SRAI_W(tmp11_l, CONST_BITS_FAST);
-
   tmp11 = __msa_pckev_h((v8i16) tmp11_l, (v8i16) tmp11_r);
 
   /* z5 = MULTIPLY(z10 + z12, FIX_1_847759065);  */
   tmp = __msa_splati_w(const0, 1);
-  UNPCK_SH_SW(z10, z5_r, z5_l);
-  UNPCK_SH_SW(z12, tmp12_r, tmp12_l);
-  ADD2(z5_r, tmp12_r, z5_l, tmp12_l, z5_r, z5_l);
+  tmp14 = z10 + z12;
+  UNPCK_SH_SW(tmp14, z5_r, z5_l);
   MUL2(z5_r, tmp, z5_l, tmp, z5_r, z5_l);
-
   z5_r = MSA_SRAI_W(z5_r, CONST_BITS_FAST);
   z5_l = MSA_SRAI_W(z5_l, CONST_BITS_FAST);
-
   z5 = __msa_pckev_h((v8i16) z5_l, (v8i16) z5_r);
 
   /* tmp10 = MULTIPLY(z12, FIX_1_082392200) - z5; */
   tmp = __msa_splati_w(const0, 2);
   UNPCK_SH_SW(z12, z12_r, z12_l);
   MUL2(z12_r, tmp, z12_l, tmp, z12_r, z12_l);
-
   z12_r = MSA_SRAI_W(z12_r, CONST_BITS_FAST);
   z12_l = MSA_SRAI_W(z12_l, CONST_BITS_FAST);
-  SUB2(z12_r, z5_r, z12_l, z5_l, z12_r, z12_l);
   tmp10 = __msa_pckev_h((v8i16) z12_l, (v8i16) z12_r);
+  tmp10 -= z5;
 
   /* tmp12 = MULTIPLY(z10, - FIX_2_613125930) + z5; */
   tmp = __msa_splati_w(const0, 3);
   UNPCK_SH_SW(z10, z10_r, z10_l);
-  UNPCK_SH_SW(z5, z5_r, z5_l);
   MUL2(z10_r, tmp, z10_l, tmp, z10_r, z10_l);
-
   z10_r = MSA_SRAI_W(z10_r, CONST_BITS_FAST);
   z10_l = MSA_SRAI_W(z10_l, CONST_BITS_FAST);
-  ADD2(z10_r, z5_r, z10_l, z5_l, z10_r, z10_l);
   tmp12 = __msa_pckev_h((v8i16) z10_l, (v8i16) z10_r);
+  tmp12 += z5;
 
   tmp6 = tmp12 - tmp7;        /* phase 2 */
   tmp5 = tmp11 - tmp6;
   tmp4 = tmp10 + tmp5;
 
-  dst0 = CLIP_SH_0_255(__msa_adds_s_h(MSA_SRAI_H(__msa_adds_s_h(tmp0, tmp7),
-                                                 (PASS1_BITS + 3)), reg_128));
-  dst7 = CLIP_SH_0_255(__msa_adds_s_h(MSA_SRAI_H(__msa_subs_s_h(tmp0, tmp7),
-                                                 (PASS1_BITS + 3)), reg_128));
-  dst1 = CLIP_SH_0_255(__msa_adds_s_h(MSA_SRAI_H(__msa_adds_s_h(tmp1, tmp6),
-                                                 (PASS1_BITS + 3)), reg_128));
-  dst6 = CLIP_SH_0_255(__msa_adds_s_h(MSA_SRAI_H(__msa_subs_s_h(tmp1, tmp6),
-                                                 (PASS1_BITS + 3)), reg_128));
-  dst2 = CLIP_SH_0_255(__msa_adds_s_h(MSA_SRAI_H(__msa_adds_s_h(tmp2, tmp5),
-                                                 (PASS1_BITS + 3)), reg_128));
-  dst5 = CLIP_SH_0_255(__msa_adds_s_h(MSA_SRAI_H(__msa_subs_s_h(tmp2, tmp5),
-                                                 (PASS1_BITS + 3)), reg_128));
-  dst4 = CLIP_SH_0_255(__msa_adds_s_h(MSA_SRAI_H(__msa_adds_s_h(tmp3, tmp4),
-                                                 (PASS1_BITS + 3)), reg_128));
-  dst3 = CLIP_SH_0_255(__msa_adds_s_h(MSA_SRAI_H(__msa_subs_s_h(tmp3, tmp4),
-                                                 (PASS1_BITS + 3)), reg_128));
+  dst0 = CLIP_SH_0_255(MSA_SRAI_H((tmp0 + tmp7), (PASS1_BITS + 3)) + reg_128);
+  dst7 = CLIP_SH_0_255(MSA_SRAI_H((tmp0 - tmp7), (PASS1_BITS + 3)) + reg_128);
+  dst1 = CLIP_SH_0_255(MSA_SRAI_H((tmp1 + tmp6), (PASS1_BITS + 3)) + reg_128);
+  dst6 = CLIP_SH_0_255(MSA_SRAI_H((tmp1 - tmp6), (PASS1_BITS + 3)) + reg_128);
+  dst2 = CLIP_SH_0_255(MSA_SRAI_H((tmp2 + tmp5), (PASS1_BITS + 3)) + reg_128);
+  dst5 = CLIP_SH_0_255(MSA_SRAI_H((tmp2 - tmp5), (PASS1_BITS + 3)) + reg_128);
+  dst4 = CLIP_SH_0_255(MSA_SRAI_H((tmp3 + tmp4), (PASS1_BITS + 3)) + reg_128);
+  dst3 = CLIP_SH_0_255(MSA_SRAI_H((tmp3 - tmp4), (PASS1_BITS + 3)) + reg_128);
 
   PCKEV_B4_UB(dst0, dst0, dst1, dst1, dst2, dst2, dst3, dst3, res0, res1, res2,
               res3);
