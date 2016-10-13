@@ -135,15 +135,12 @@ void
 fdct_islow_msa (DCTELEM *data)
 {
   v8i16 val0, val1, val2, val3, val4, val5, val6, val7;
-  v4i32 val0_r, val1_r, val2_r, val3_r, val4_r, val5_r, val6_r, val7_r;
-  v4i32 val0_l, val1_l, val2_l, val3_l, val4_l, val5_l, val6_l, val7_l;
   v8i16 tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7;
-  v4i32 tmp0_r, tmp1_r, tmp2_r, tmp3_r, tmp4_r, tmp5_r, tmp6_r, tmp7_r;
-  v4i32 tmp0_l, tmp1_l, tmp2_l, tmp3_l, tmp4_l, tmp5_l, tmp6_l, tmp7_l;
+  v4i32 tmp4_r, tmp5_r, tmp6_r, tmp7_r, tmp4_l, tmp5_l, tmp6_l, tmp7_l;
   v8i16 tmp10, tmp11, tmp12, tmp13;
   v8i16 dst0, dst1, dst2, dst3, dst4, dst5, dst6, dst7;
   v4i32 z1_r, z1_l, z2_r, z2_l, z3_r, z3_l, z4_r, z4_l;
-  v4i32 z5_r, z5_l, z10_r, z10_l, z11_r, z11_l, z12_r, z12_l, z13_r, z13_l;
+  v4i32 z5_r, z5_l, z12_r, z12_l, z13_r, z13_l;
   v4i32 const0 = {FIX_0_298631336, FIX_2_053119869, FIX_3_072711026,
                   FIX_1_501321110};
   v4i32 const1 = {-FIX_0_899976223, -FIX_2_562915447, -FIX_1_961570560,
