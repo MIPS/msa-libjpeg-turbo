@@ -403,8 +403,8 @@ idct_ifast_msa (JCOEFPTR quantptr, JCOEFPTR block, JSAMPARRAY output_buf)
   v8i16 tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7;
   v8i16 tmp10, tmp11, tmp12, tmp13, tmp14;
   v8i16 z5, z10, z11, z12, z13;
-  v4i32 z5_r, z5_l, z12_r, z12_l, z10_r, z10_l, z11_r, z11_l;
-  v4i32 tmp11_r, tmp11_l, tmp12_r, tmp12_l, tmp13_l, tmp13_r;
+  v4i32 z5_r, z5_l, z12_r, z12_l, z10_r, z10_l;
+  v4i32 tmp11_r, tmp11_l, tmp12_r, tmp12_l;
   v4i32 const0 = {FIX_1_414213562, FIX_1_847759065_fast,
                   FIX_1_082392200, -FIX_2_613125930};
   v8i16 reg_128 = __msa_ldi_h(128);
