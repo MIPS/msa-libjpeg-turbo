@@ -364,10 +364,13 @@ a universal library.
 
 
 Building libjpeg-turbo for Android
-==================================
+----------------------------------
 
 Building libjpeg-turbo for Android platforms requires the
 [Android NDK](https://developer.android.com/tools/sdk/ndk) and autotools.
+
+
+### ARMv7 (32-bit)
 
 The following is a general recipe script that can be modified for your specific
 needs.
@@ -423,6 +426,37 @@ needs.
     SYSROOT=${NDK_PATH}/platforms/android-${ANDROID_VERSION}/arch-arm64
     ANDROID_CFLAGS="--sysroot=${SYSROOT}"
 
+    TOOLCHAIN=${NDK_PATH}/toolchains/${HOST}-${TOOLCHAIN_VERSION}/prebuilt/${BUILD_PLATFORM}
+    export CPP=${TOOLCHAIN}/bin/${HOST}-cpp
+    export AR=${TOOLCHAIN}/bin/${HOST}-ar
+    export NM=${TOOLCHAIN}/bin/${HOST}-nm
+    export CC=${TOOLCHAIN}/bin/${HOST}-gcc
+    export LD=${TOOLCHAIN}/bin/${HOST}-ld
+    export RANLIB=${TOOLCHAIN}/bin/${HOST}-ranlib
+    export OBJDUMP=${TOOLCHAIN}/bin/${HOST}-objdump
+    export STRIP=${TOOLCHAIN}/bin/${HOST}-strip
+    cd {build_directory}
+    sh {source_directory}/configure --host=${HOST} \
+      CFLAGS="${ANDROID_CFLAGS} -O3 -fPIE" \
+      CPPFLAGS="${ANDROID_CFLAGS}" \
+      LDFLAGS="${ANDROID_CFLAGS} -pie" --with-simd ${1+"$@"}
+    make
+
+
+### MIPS/MIPS64
+
+The following is a general recipe script that can be modified for your specific
+needs.
+
+    # Set these variables to suit your needs
+    NDK_PATH={full path to the "ndk" directory-- for example, /opt/android/sdk/ndk-bundle}
+    BUILD_PLATFORM={the platform name for the NDK package you installed--
+      for example, "windows-x86" or "linux-x86_64" or "darwin-x86_64"}
+    TOOLCHAIN_VERSION={"4.8", "4.9", "clang3.5", etc.  This corresponds to a
+      toolchain directory under ${NDK_PATH}/toolchains/.}
+    ANDROID_VERSION={The minimum version of Android to support.  "21" or later
+      is required for a 64-bit build.}
+
     # 32-bit MIPS build for mips32r2 (74kf)
     HOST=mipsel-linux-android
     SYSROOT=${NDK_PATH}/platforms/android-${ANDROID_VERSION}/arch-mips
@@ -459,6 +493,7 @@ needs.
 
 If building for Android 4.0.x (API level < 16) or earlier, remove `-fPIE` from
 `CFLAGS` and `-pie` from `LDFLAGS`.
+
 
 Building libjpeg-turbo for MIPS Linux
 =====================================
@@ -497,6 +532,7 @@ MIPS Linux toolchain is available at:
       CFLAGS="${MIPS_CFLAGS} -O3" CPPFLAGS="${MIPS_CFLAGS}" \
       LDFLAGS="${MIPS_CFLAGS}" --with-simd ${1+"$@"}
     make
+
 
 Installing libjpeg-turbo
 ------------------------
