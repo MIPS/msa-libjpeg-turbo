@@ -1,3 +1,16 @@
+1.5.3
+=====
+
+### Significant changes relative to 1.5.2:
+
+1. Fixed a NullPointerException in the TurboJPEG Java wrapper that occurred
+when using the YUVImage constructor that creates an instance backed by separate
+image planes and allocates memory for the image planes.
+
+2. Fixed an issue whereby the Java version of TJUnitTest would fail when
+testing BufferedImage encoding/decoding on big endian systems.
+
+
 1.5.2
 =====
 
@@ -58,6 +71,15 @@ in libFuzzer, and it allows developers of security-sensitive applications to
 more easily defend against one of the progressive JPEG exploits (LJT-01-004)
 identified in
 [this report](http://www.libjpeg-turbo.org/pmwiki/uploads/About/TwoIssueswiththeJPEGStandard.pdf).
+
+10. TJBench will now run each benchmark for 1 second prior to starting the
+timer, in order to improve the consistency of the results.  Furthermore, the
+`-warmup` option is now used to specify the amount of warmup time rather than
+the number of warmup iterations.
+
+11. Fixed an error (`short jump is out of range`) that occurred when assembling
+the 32-bit x86 SIMD extensions with NASM versions prior to 2.04.  This was a
+regression introduced by 1.5 beta1[12].
 
 
 1.5.1
