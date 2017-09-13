@@ -67,7 +67,7 @@ endif
 
 if SIMD_DSPR2
 
-libsimd_la_SOURCES = jsimd_mips_dspr2.c jsimd_mips_dspr2_asm.h jsimd_mips_dspr2.S
+libsimd_la_SOURCES = jsimd_dspr2.c jsimd_mips_dspr2_asm.h jsimd_mips_dspr2.S
 
 endif
 
